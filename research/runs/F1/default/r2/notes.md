@@ -78,3 +78,16 @@
 | P-3 | test-writer가 테스트 224개(1,634줄)를 작성해 서브에이전트 중 비용이 가장 큼($0.65) | 관찰로 기록(인사이트 후보). 지침은 바꾸지 않음 |
 | P-4 | minor로 분류된 보안 강화 제안(요청 크기 제한, 보안 헤더 등)은 고치지 않고 기록만 함 | 설계대로. 심각도 판정이 적절한지는 보고서에서 다룸 |
 | P-5 | 채점 도구의 radon이 Windows 애플리케이션 제어 정책에 막힘 | `python -m radon`, `python -m bandit`으로 실행하도록 수정 |
+
+## 파이프라인 결과물 (`artifacts/`)
+
+실행 브랜치 `run/F1-default-r2`의 기능 커밋 `3acf081`에서 그대로 꺼낸 문서입니다. 서비스 코드와 테스트는 실행 브랜치에 남아 있고, main에는 비교 실험이 끝난 뒤 가장 좋은 F1 실행을 반영합니다.
+
+| 파일 | 만든 쪽 | 내용 |
+|---|---|---|
+| [F1-plan.md](artifacts/F1-plan.md) | 메인 | 구현 계획, 모듈 구조, 화면 규칙, 해석 결정 D-1~D-9 |
+| [mockups/F1-index.html](artifacts/mockups/F1-index.html) | 메인 | 화면 목업 4개(홈, 결과, 입력 오류, 찾을 수 없음)의 목록. 브라우저로 열어 봄 |
+| [F1-decisions.md](artifacts/F1-decisions.md) | 메인 | 실행 중 해석 결정 D-7 정정, D-10~D-13 |
+| [F1-report.md](artifacts/F1-report.md) | 메인 | 실행 보고서: 단계별 진행, 루프 집계, minor 지적 10건, 결정 목록 |
+| [service.md](artifacts/service.md) | doc-keeper | 서비스 사용법: 실행 방법, 환경 변수, 화면 흐름, API 예시 |
+| [CHANGELOG.md](artifacts/CHANGELOG.md) | doc-keeper | F1 변경 기록 |
