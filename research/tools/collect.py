@@ -23,6 +23,7 @@ import csv
 import json
 import re
 import shutil
+import subprocess
 import sys
 from collections import defaultdict
 from collections.abc import Callable
@@ -436,7 +437,96 @@ def main() -> int:
         f"session {session_id}: {len(messages)} messages, {len(agent_rows)} subagents, "
         f"{len(calls)} API calls -> {out}"
     )
+    run_json = out / "run.json"
+    if args.worktree and run_json.exists():
+        base = json.loads(run_json.read_text(encoding="utf-8"))["base_commit"]
+        rows = checkpoints(Path(args.worktree), base)
+        write_checkpoints(out / "checkpoints.csv", rows)
+        outside = sorted({f for r in rows for f in r["outside_files"].split(";") if f})
+        print(
+            f"{len(rows)} commits on the run branch; files outside write areas: {outside or 'none'}"
+        )
     return 0
+
+
+# ---------------------------------------------------------------- git history of a run
+
+# Every file a pipeline run may change (union of all write areas, docs/00 section 7.3).
+RUN_WRITE_AREAS = (
+    "src/shortlink/",
+    "tests/",
+    "docs/plans/",
+    "docs/service.md",
+    "CHANGELOG.md",
+    "pyproject.toml",
+    "uv.lock",
+)
+
+
+def checkpoints(worktree: Path, base: str) -> list[dict]:
+    """One row per commit on the run branch after base: checkpoint or feature commit,
+    with size and any changed file outside the run's write areas."""
+    fmt = "--format=@@%H\x1f%cI\x1f%s"
+    out = subprocess.run(
+        ["git", "log", "--reverse", "--numstat", fmt, f"{base}..HEAD"],
+        cwd=worktree,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        check=False,
+    ).stdout
+    rows: list[dict] = []
+    for line in out.splitlines():
+        if line.startswith("@@"):
+            sha, ts, subject = line[2:].split("\x1f", 2)
+            kind = (
+                "checkpoint"
+                if subject.startswith("wip(")
+                else ("feature" if re.match(r"F\d+:", subject) else "other")
+            )
+            rows.append(
+                {
+                    "seq": len(rows) + 1,
+                    "commit": sha[:10],
+                    "timestamp": ts,
+                    "kind": kind,
+                    "subject": subject,
+                    "files": 0,
+                    "insertions": 0,
+                    "deletions": 0,
+                    "outside_files": "",
+                }
+            )
+        elif line.strip() and rows:
+            added, deleted, path = line.split("\t", 2)
+            row = rows[-1]
+            row["files"] += 1
+            row["insertions"] += int(added) if added.isdigit() else 0
+            row["deletions"] += int(deleted) if deleted.isdigit() else 0
+            if not any(
+                path == a or (a.endswith("/") and path.startswith(a)) for a in RUN_WRITE_AREAS
+            ):
+                row["outside_files"] = ";".join(filter(None, [row["outside_files"], path]))
+    return rows
+
+
+def write_checkpoints(path: Path, rows: list[dict]) -> None:
+    cols = [
+        "seq",
+        "commit",
+        "timestamp",
+        "kind",
+        "subject",
+        "files",
+        "insertions",
+        "deletions",
+        "outside_files",
+    ]
+    with path.open("w", newline="", encoding="utf-8") as fh:
+        w = csv.DictWriter(fh, fieldnames=cols)
+        w.writeheader()
+        for r in rows:
+            w.writerow({**r, "subject": sanitize(r["subject"])})
 
 
 # ---------------------------------------------------------------- outputs
