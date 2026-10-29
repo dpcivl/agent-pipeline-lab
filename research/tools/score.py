@@ -11,7 +11,7 @@ worktree, then collects static metrics from the same worktree:
   size      lines of code in src/ and tests/
 
 Usage:
-  uv run python research/tools/score.py --worktree <path> --eval-dir <path> --out <score.json>
+  uv run python research/tools/score.py --worktree <path> --eval-dir research/eval/F1 [--eval-dir research/eval/F2 ...] --out <score.json>
 
 The evaluation tests import only shortlink.main.create_app and shortlink.config.Settings
 and talk to the app over HTTP, so they work with any internal structure.
@@ -54,28 +54,32 @@ def junit_counts(path: Path) -> dict:
     return total
 
 
-def eval_tests(worktree: Path, eval_dir: Path, tmp: Path) -> dict:
+def eval_tests(worktree: Path, eval_dirs: list[Path], tmp: Path) -> dict:
+    """Run one or more hidden suites together (e.g. F1+F2 for an F2 run) and report the
+    total and a per-suite breakdown."""
     target = tmp / "eval_tests"
-    shutil.copytree(eval_dir, target)
+    target.mkdir()
+    for d in eval_dirs:
+        shutil.copytree(d, target / d.name)
     junit = tmp / "eval-junit.xml"
     proc = run(
         [
-            "uv",
-            "run",
-            "--frozen",
-            "pytest",
-            str(target),
-            "-q",
-            "-p",
-            "no:cacheprovider",
-            "--rootdir",
-            str(target),
-            f"--junitxml={junit}",
+            "uv", "run", "--frozen", "pytest", str(target), "-q", "-p", "no:cacheprovider",
+            "--import-mode=importlib", "--rootdir", str(target), f"--junitxml={junit}",
         ],
         worktree,
-    )
+    )  # fmt: skip
     result = junit_counts(junit)
     result["exit_code"] = proc.returncode
+    result["suites"] = {}
+    if junit.exists():
+        root = ET.parse(junit).getroot()
+        for d in eval_dirs:
+            cases = [c for c in root.iter("testcase") if d.name in (c.get("classname") or "")]
+            failed = sum(
+                1 for c in cases if c.find("failure") is not None or c.find("error") is not None
+            )
+            result["suites"][d.name] = {"tests": len(cases), "passed": len(cases) - failed}
     return result
 
 
@@ -167,7 +171,12 @@ def main() -> int:
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
     ap.add_argument("--worktree", required=True)
-    ap.add_argument("--eval-dir", help="hidden evaluation tests for this feature")
+    ap.add_argument(
+        "--eval-dir",
+        action="append",
+        default=[],
+        help="hidden evaluation suite; repeat for several (F1 and F2 for an F2 run)",
+    )
     ap.add_argument("--out", required=True)
     args = ap.parse_args()
 
@@ -175,7 +184,7 @@ def main() -> int:
     with tempfile.TemporaryDirectory(prefix="score-") as tmp_name:
         tmp = Path(tmp_name)
         result = {
-            "eval": eval_tests(worktree, Path(args.eval_dir).resolve(), tmp)
+            "eval": eval_tests(worktree, [Path(d).resolve() for d in args.eval_dir], tmp)
             if args.eval_dir
             else None,
             "own_tests": own_tests(worktree, tmp),

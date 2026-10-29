@@ -7,7 +7,13 @@
     "passed": 107,
     "failed_ids": [],
     "pass_rate": 1.0,
-    "exit_code": 0
+    "exit_code": 0,
+    "suites": {
+      "F1": {
+        "tests": 107,
+        "passed": 107
+      }
+    }
   },
   "own_tests": {
     "tests": 224,
