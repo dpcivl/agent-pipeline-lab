@@ -69,14 +69,16 @@ def git(*args: str, cwd: Path = REPO, env: dict | None = None, stdin: str | None
         check=False,
         cwd=cwd,
         env=env,
-        input=stdin,
+        # Bytes, not text: on Windows text-mode stdin turns "\n" into "\r\n", and git would
+        # read every path in `update-index --index-info` with a trailing "\r".
+        input=stdin.encode("utf-8") if stdin is not None else None,
         capture_output=True,
-        text=True,
-        encoding="utf-8",
     )
+    stdout = result.stdout.decode("utf-8", errors="replace")
     if result.returncode != 0:
-        sys.exit(f"git {' '.join(args)} failed:\n{result.stderr.strip()}")
-    return result.stdout.strip()
+        stderr = result.stderr.decode("utf-8", errors="replace")
+        sys.exit(f"git {' '.join(args)} failed:\n{stderr.strip()}")
+    return stdout.strip()
 
 
 def spec_paths(feature: str) -> list[str]:
