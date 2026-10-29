@@ -13,6 +13,10 @@ disable-model-invocation: true
 - 기능 설계서: `docs/features/$feature.md`
 - 고정 계약과 명령: `CLAUDE.md`
 
+## 0. 실행 위치 확인
+
+시작하기 전에 Bash로 `test -d research/tools && echo RESEARCH_REPO || echo RUN_WORKTREE`를 실행한다. 결과가 `RESEARCH_REPO`이면 여기는 실험용 worktree가 아니라 연구 저장소다. 아무것도 하지 말고 "실험용 worktree에서 다시 시작해야 합니다"라고 알린 뒤 끝낸다.
+
 ## 서브에이전트
 
 | 이름 | 하는 일 | 파일 수정 |
