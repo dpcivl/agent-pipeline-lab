@@ -60,12 +60,21 @@ def is_html(response) -> bool:
     return response.headers.get("content-type", "").lower().startswith("text/html")
 
 
-def squash(text: str) -> str:
-    return " ".join(text.split())
+def compact(text: str) -> str:
+    """Drop all whitespace, so phrase checks ignore markup boundaries and spacing."""
+    return "".join(text.split())
 
 
-def numbers_in(text: str) -> set[int]:
-    return {int(n) for n in NUMBER_RE.findall(text)}
+def has_phrase(node, phrase: str) -> bool:
+    return compact(phrase) in compact(node.text())
+
+
+def numbers_in(doc) -> set[int]:
+    """Standalone integers, searched in each rendered text node separately.
+
+    Nodes are never joined, so `<p>4</p><p>2026-10-29...</p>` cannot read as "42026".
+    """
+    return {int(n) for chunk in doc.chunks() for n in NUMBER_RE.findall(chunk)}
 
 
 def stats_page(client, parse_html, code):
@@ -275,10 +284,9 @@ def test_hidden_ac17_stats_page_for_new_link(client, parse_html):
     url = "https://example.com/stats-page?q=x"
     create(client, url, "page-alias")
     _, doc = stats_page(client, parse_html, "page-alias")
-    text = squash(doc.text())
     assert url in doc.text()
-    assert NOT_YET in text
-    assert 0 in numbers_in(text), "click count 0 not shown"
+    assert has_phrase(doc, NOT_YET)
+    assert 0 in numbers_in(doc), "click count 0 not shown"
 
 
 def test_hidden_ac17_stats_page_after_clicks(client, parse_html):
@@ -286,10 +294,9 @@ def test_hidden_ac17_stats_page_after_clicks(client, parse_html):
     create(client, url, "clicked-alias")
     click(client, "clicked-alias", 5, url)
     _, doc = stats_page(client, parse_html, "clicked-alias")
-    text = squash(doc.text())
     assert url in doc.text()
-    assert 5 in numbers_in(text), "click count 5 not shown"
-    assert NOT_YET not in text
+    assert 5 in numbers_in(doc), "click count 5 not shown"
+    assert not has_phrase(doc, NOT_YET)
 
 
 def test_hidden_ac17_stats_page_for_random_code(client, parse_html):
@@ -297,7 +304,7 @@ def test_hidden_ac17_stats_page_for_random_code(client, parse_html):
     code = create(client, url)["code"]
     _, doc = stats_page(client, parse_html, code)
     assert url in doc.text()
-    assert NOT_YET in squash(doc.text())
+    assert has_phrase(doc, NOT_YET)
 
 
 def test_hidden_ac17_stats_page_shows_short_url(client, parse_html):
@@ -318,7 +325,7 @@ def test_hidden_ac18_unknown_code_stats_page_404(client, parse_html, code):
     assert response.status_code == 404
     assert is_html(response)
     doc = parse_html(response.text)
-    assert "링크를 찾을 수 없습니다" in squash(doc.text())
+    assert has_phrase(doc, "링크를 찾을 수 없습니다")
     assert any((a.get("href") or "") in HOME_HREFS for a in doc.iter("a")), "no link to home"
 
 
@@ -335,7 +342,7 @@ def test_hidden_ac18_case_variant_stats_page_404(client):
 def stats_links(doc, code):
     targets = {f"/stats/{code}", f"{BASE_URL}/stats/{code}"}
     return [
-        a for a in doc.iter("a") if (a.get("href") or "") in targets and "통계 보기" in a.text()
+        a for a in doc.iter("a") if (a.get("href") or "") in targets and has_phrase(a, "통계 보기")
     ]
 
 
@@ -387,7 +394,7 @@ def test_hidden_ac20_alias_clicks_survive_new_app(app_factory, parse_html):
     with TestClient(app_factory(), follow_redirects=False) as second:
         assert is_clicks(stats(second, "kept-alias")["clicks"], 4)
         _, doc = stats_page(second, parse_html, "kept-alias")
-        assert 4 in numbers_in(squash(doc.text()))
+        assert 4 in numbers_in(doc)
 
 
 def test_hidden_ac20_unclicked_link_survives_new_app(app_factory):

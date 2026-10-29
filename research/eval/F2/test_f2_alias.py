@@ -87,10 +87,6 @@ def is_html(response) -> bool:
     return response.headers.get("content-type", "").lower().startswith("text/html")
 
 
-def squash(text: str) -> str:
-    return " ".join(text.split())
-
-
 def field_named(root, name):
     """The first <input> or <textarea> with the given name under `root`."""
     for el in root.iter():
@@ -407,8 +403,9 @@ def test_hidden_ac10_alias_label_text(client, parse_html):
     doc = parse_html(client.get("/").text)
     field = field_named(shortening_form(doc), "alias")
     assert field is not None
-    texts = [squash(label.text()) for label in labels_for(doc, field)]
-    assert any("별칭 (선택)" in text for text in texts), texts
+    # Whitespace-insensitive, so markup inside the label cannot split the phrase.
+    texts = ["".join(label.text().split()) for label in labels_for(doc, field)]
+    assert any("별칭(선택)" in text for text in texts), texts
 
 
 def test_hidden_ac10_form_alias_used_in_result_short_url(client, parse_html):

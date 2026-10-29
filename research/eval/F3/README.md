@@ -1,7 +1,7 @@
 <!-- EVAL-CANARY-F3-a35abd6a9f5f3b84 -->
 # F3 숨은 수용 테스트
 
-F3 설계서(`docs/features/F3.md` v1)의 AC-1~AC-21을 공개 HTTP 인터페이스로만 검사하는 채점용 테스트입니다. 모든 파이프라인 결과물을 같은 기준으로 채점합니다. 앱은 고정 계약(`shortlink.main.create_app`, `shortlink.config.Settings`)과 F3가 추가하는 `Settings` 필드 `api_keys`, `rate_limit_per_minute`로만 만들고, 구현 내부(모듈, 테이블, 세션 방식)는 보지 않습니다.
+F3 설계서(`docs/features/F3.md` v1.1)의 AC-1~AC-21을 공개 HTTP 인터페이스로만 검사하는 채점용 테스트입니다. 모든 파이프라인 결과물을 같은 기준으로 채점합니다. 앱은 고정 계약(`shortlink.main.create_app`, `shortlink.config.Settings`)과 F3가 추가하는 `Settings` 필드 `api_keys`, `rate_limit_per_minute`로만 만들고, 구현 내부(모듈, 테이블, 세션 방식)는 보지 않습니다.
 
 ## 실행
 
@@ -46,7 +46,7 @@ uv run pytest research/eval/F1 research/eval/F2 research/eval/F3 -q
 - AC-19: `test_hidden_ac19_list_escapes_original_url`, `test_hidden_ac19_expired_link_marked_in_list`
 - AC-20: `test_hidden_ac20_home_links_to_manage`
 - AC-21: `test_hidden_ac21_screen_has_lang_ko`, `test_hidden_ac21_screen_has_viewport_meta`(키 입력, 목록, 틀린 키 401, 삭제 뒤 목록, 만료 410 화면 5개)
-- AC-22: 이 폴더에 없음. F1·F2 평가 테스트를 함께 실행해 확인합니다(F1·F2 픽스처는 새 필드를 주지 않으므로 F3 기본값 `api_keys=()`, `rate_limit_per_minute=30`으로 돕니다).
+- AC-22: 이 폴더에 없음. F1·F2 평가 테스트를 함께 실행해 확인합니다(F1·F2 픽스처는 새 필드를 주지 않으므로 F3 기본값 `api_keys=()`, `rate_limit_per_minute=120`으로 돕니다. 설계서 v1.1에서 30 → 120으로 바뀜).
 
 ## 판정 기준에서 일부러 정한 해석
 
