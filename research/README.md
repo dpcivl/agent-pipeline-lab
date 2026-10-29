@@ -1,5 +1,7 @@
 # research — 측정 도구와 실험 데이터
 
+실험 실행 절차는 [RUNBOOK.md](RUNBOOK.md)를 봅니다.
+
 | 폴더 | 내용 | git 공개 |
 |---|---|---|
 | `hooks/` | 이벤트 기록, 쓰기 영역·읽기 범위·git 접근 차단 hook (`runscope.py`에 실험 격리 규칙) | 공개 |
