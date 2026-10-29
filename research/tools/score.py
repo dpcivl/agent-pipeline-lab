@@ -64,7 +64,7 @@ def eval_tests(worktree: Path, eval_dirs: list[Path], tmp: Path) -> dict:
     junit = tmp / "eval-junit.xml"
     proc = run(
         [
-            "uv", "run", "--frozen", "pytest", str(target), "-q", "-p", "no:cacheprovider",
+            "uv", "run", "--frozen", "python", "-m", "pytest", str(target), "-q", "-p", "no:cacheprovider",
             "--rootdir", str(target), f"--junitxml={junit}",
         ],
         worktree,
@@ -91,6 +91,8 @@ def own_tests(worktree: Path, tmp: Path) -> dict:
             "uv",
             "run",
             "--frozen",
+            "python",
+            "-m",
             "pytest",
             "-q",
             "-p",
@@ -111,7 +113,19 @@ def own_tests(worktree: Path, tmp: Path) -> dict:
 
 def ruff(worktree: Path) -> dict:
     proc = run(
-        ["uv", "run", "--frozen", "ruff", "check", "src", "tests", "--output-format", "json"],
+        [
+            "uv",
+            "run",
+            "--frozen",
+            "python",
+            "-m",
+            "ruff",
+            "check",
+            "src",
+            "tests",
+            "--output-format",
+            "json",
+        ],
         worktree,
     )
     try:

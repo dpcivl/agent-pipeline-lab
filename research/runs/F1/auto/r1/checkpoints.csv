@@ -1,0 +1,5 @@
+seq,commit,timestamp,kind,subject,files,insertions,deletions,outside_files
+1,a01a06525f,2026-10-29T13:40:16+09:00,checkpoint,"wip(F1): 1 계획, 스켈레톤, 목업",13,687,1,
+2,62a0bf3b0b,2026-10-29T13:44:56+09:00,checkpoint,wip(F1): 2 구현과 테스트 작성,21,1323,14,
+3,5c61fc4264,2026-10-29T13:52:04+09:00,checkpoint,wip(F1): 4 리뷰 1라운드 수정,9,163,19,
+4,fe21b84b5b,2026-10-29T13:55:52+09:00,feature,F1: 단축 URL 생성과 리다이렉트 (API와 웹 화면),3,322,0,

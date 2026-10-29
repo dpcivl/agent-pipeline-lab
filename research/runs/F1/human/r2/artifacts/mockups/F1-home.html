@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ShortLink</title>
+  <!-- 실제 구현: 아래 style 블록 내용은 /static/style.css 로 옮기고
+       <link rel="stylesheet" href="/static/style.css"> 로 연결합니다. (네 목업의 CSS는 모두 같습니다) -->
+  <style>
+    :root {
+      --color-bg: #f3f4f6;
+      --color-surface: #ffffff;
+      --color-text: #1f2937;
+      --color-muted: #6b7280;
+      --color-border: #d1d5db;
+      --color-primary: #2563eb;
+      --color-primary-hover: #1d4ed8;
+      --color-error: #b91c1c;
+      --color-error-bg: #fef2f2;
+      --color-error-border: #fca5a5;
+      --radius: 8px;
+    }
+    * { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    body {
+      margin: 0;
+      background: var(--color-bg);
+      color: var(--color-text);
+      font-family: system-ui, -apple-system, "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+      font-size: 16px;
+      line-height: 1.5;
+    }
+    .site-header { max-width: 560px; margin: 0 auto; padding: 16px 16px 0; }
+    .brand { color: var(--color-primary); font-weight: 700; font-size: 1.125rem; text-decoration: none; }
+    main { max-width: 560px; margin: 0 auto; padding: 16px; }
+    .card {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius);
+      padding: 24px;
+    }
+    h1 { margin: 0 0 8px; font-size: 1.5rem; line-height: 1.3; }
+    .hero h1 { color: var(--color-primary); font-size: 2rem; }
+    .tagline { margin: 0 0 24px; color: var(--color-muted); }
+    label { display: block; margin-bottom: 6px; font-weight: 600; }
+    .form-row { display: flex; flex-wrap: wrap; gap: 8px; }
+    .form-row input { flex: 1 1 240px; min-width: 0; }
+    input[type="text"] {
+      width: 100%;
+      padding: 10px 12px;
+      font: inherit;
+      color: inherit;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius);
+      background: var(--color-surface);
+    }
+    input[type="text"]:focus { outline: 2px solid var(--color-primary); outline-offset: 1px; border-color: var(--color-primary); }
+    input[aria-invalid="true"] { border-color: var(--color-error); }
+    .button {
+      display: inline-block;
+      padding: 10px 20px;
+      font: inherit;
+      font-weight: 600;
+      color: #ffffff;
+      background: var(--color-primary);
+      border: 1px solid var(--color-primary);
+      border-radius: var(--radius);
+      cursor: pointer;
+    }
+    .button:hover { background: var(--color-primary-hover); }
+    .button-secondary { color: var(--color-primary); background: var(--color-surface); }
+    .button-secondary:hover { background: #eff6ff; }
+    .form-row .button { flex: 0 0 auto; }
+    .error {
+      margin: 12px 0 0;
+      padding: 10px 12px;
+      color: var(--color-error);
+      background: var(--color-error-bg);
+      border: 1px solid var(--color-error-border);
+      border-radius: var(--radius);
+    }
+    .field-name { margin: 20px 0 4px; color: var(--color-muted); font-size: 0.875rem; font-weight: 600; }
+    .short-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+    .short-url {
+      flex: 1 1 200px;
+      min-width: 0;
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--color-primary);
+      overflow-wrap: anywhere;
+    }
+    .original-url { margin: 0; overflow-wrap: anywhere; }
+    .actions { margin: 24px 0 0; }
+    .actions a { color: var(--color-primary); font-weight: 600; }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="card hero">
+      <h1>ShortLink</h1>
+      <p class="tagline">긴 URL을 짧고 공유하기 쉬운 링크로 바꿔 드립니다.</p>
+      <form method="post" action="/">
+        <label for="url">줄일 URL</label>
+        <div class="form-row">
+          <input type="text" inputmode="url" id="url" name="url"
+                 placeholder="https://example.com/very/long/path" autocomplete="off">
+          <button type="submit" class="button">줄이기</button>
+        </div>
+      </form>
+    </section>
+  </main>
+</body>
+</html>

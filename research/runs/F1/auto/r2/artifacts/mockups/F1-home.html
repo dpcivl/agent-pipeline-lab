@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ShortLink</title>
+  <style>
+    /* 기준 스타일: src/shortlink/static/style.css 는 이 블록(목업 전용 부분 제외)과 같게 만든다. */
+    :root {
+      --color-bg: #f5f7fb;
+      --color-surface: #ffffff;
+      --color-text: #1f2937;
+      --color-muted: #6b7280;
+      --color-border: #d1d5db;
+      --color-primary: #2563eb;
+      --color-primary-hover: #1d4ed8;
+      --color-error: #b91c1c;
+      --color-error-bg: #fef2f2;
+      --color-error-border: #fca5a5;
+      --color-success-bg: #eff6ff;
+      --radius: 10px;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+      font-size: 16px;
+      line-height: 1.6;
+      color: var(--color-text);
+      background: var(--color-bg);
+    }
+    .site-header { background: var(--color-surface); border-bottom: 1px solid var(--color-border); }
+    .site-header .inner, main { max-width: 640px; margin: 0 auto; padding: 0 16px; }
+    .site-header .inner { padding-top: 14px; padding-bottom: 14px; }
+    .brand { font-size: 1.25rem; font-weight: 700; color: var(--color-primary); text-decoration: none; }
+    main { padding-top: 32px; padding-bottom: 48px; }
+    .card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius); padding: 24px; }
+    h1 { font-size: 1.5rem; margin: 0 0 8px; }
+    .lead { margin: 0 0 24px; color: var(--color-muted); }
+    .shorten-form label { display: block; font-weight: 600; margin-bottom: 6px; }
+    .input-row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .input-row input { flex: 1 1 240px; min-width: 0; padding: 10px 12px; font-size: 1rem; border: 1px solid var(--color-border); border-radius: 8px; }
+    .input-row input[aria-invalid="true"] { border-color: var(--color-error); }
+    .button { padding: 10px 20px; font-size: 1rem; font-weight: 600; color: #ffffff; background: var(--color-primary); border: 0; border-radius: 8px; cursor: pointer; }
+    .button:hover { background: var(--color-primary-hover); }
+    .error { margin: 0 0 12px; padding: 10px 12px; color: var(--color-error); background: var(--color-error-bg); border: 1px solid var(--color-error-border); border-radius: 8px; }
+    dl { margin: 0; }
+    .result-item { margin: 0 0 16px; }
+    .result-item dt { font-weight: 600; margin-bottom: 4px; }
+    .result-item dd { margin: 0; }
+    .short-url-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 10px 12px; background: var(--color-success-bg); border-radius: 8px; }
+    .short-url { flex: 1 1 auto; min-width: 0; font-size: 1.125rem; font-weight: 600; color: var(--color-primary); overflow-wrap: anywhere; }
+    .copy-button { padding: 6px 14px; font-size: 0.875rem; }
+    .original-url { margin: 0; color: var(--color-muted); overflow-wrap: anywhere; }
+    .actions { margin: 24px 0 0; }
+    .actions a { color: var(--color-primary); font-weight: 600; }
+    /* 목업 전용: 실제 화면에는 넣지 않는다 */
+    .mockup-note { max-width: 640px; margin: 16px auto 0; padding: 8px 16px; font-size: 0.8125rem; color: #92400e; background: #fffbeb; border: 1px dashed #f59e0b; }
+  </style>
+</head>
+<body>
+  <p class="mockup-note">목업: 홈 — GET / (200) · <a href="F1-index.html">목업 목록</a></p>
+  <header class="site-header">
+    <div class="inner"><a class="brand" href="/">ShortLink</a></div>
+  </header>
+  <main>
+    <section class="card">
+      <h1>URL 줄이기</h1>
+      <p class="lead">긴 URL을 짧고 공유하기 쉬운 링크로 바꿔 드립니다.</p>
+      <form class="shorten-form" method="post" action="/">
+        <label for="url">줄일 URL</label>
+        <div class="input-row">
+          <input id="url" name="url" type="text" placeholder="https://example.com/very/long/path" value="" autocomplete="off">
+          <button class="button" type="submit">줄이기</button>
+        </div>
+      </form>
+    </section>
+  </main>
+</body>
+</html>

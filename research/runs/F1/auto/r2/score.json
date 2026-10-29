@@ -1,0 +1,47 @@
+{
+  "eval": {
+    "tests": 107,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "passed": 107,
+    "failed_ids": [],
+    "pass_rate": 1.0,
+    "exit_code": 0,
+    "suites": {
+      "F1": {
+        "tests": 107,
+        "passed": 107
+      }
+    }
+  },
+  "own_tests": {
+    "tests": 96,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "passed": 96,
+    "failed_ids": [],
+    "pass_rate": 1.0,
+    "exit_code": 0,
+    "coverage_percent": 93.49
+  },
+  "ruff": {
+    "count": 0,
+    "by_rule": {}
+  },
+  "radon": {
+    "blocks": 20,
+    "average": 2.7,
+    "max": 14
+  },
+  "bandit": {
+    "count": 0,
+    "by_severity": {},
+    "tests": []
+  },
+  "size": {
+    "src_lines": 329,
+    "test_lines": 897
+  }
+}

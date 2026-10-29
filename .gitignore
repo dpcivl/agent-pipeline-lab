@@ -32,3 +32,6 @@ research/runs/**/transcripts/
 Thumbs.db
 .vscode/
 .idea/
+
+# Tool logs in run folders contain local paths
+research/runs/**/*.log

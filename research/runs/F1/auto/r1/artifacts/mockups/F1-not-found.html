@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>링크를 찾을 수 없습니다 — ShortLink</title>
+  <!-- 실제 구현: 아래 style 내용은 /static/style.css 로 옮기고 <link rel="stylesheet" href="/static/style.css"> 로 불러온다. 네 목업의 style은 모두 같다. -->
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --border: #e5e7eb;
+      --input-border: #d1d5db;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --error: #b91c1c;
+      --error-bg: #fef2f2;
+      --error-border: #fecaca;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+    main { max-width: 640px; margin: 0 auto; padding: 40px 16px; }
+    .brand { display: inline-block; margin-bottom: 16px; font-weight: 700; color: var(--primary); text-decoration: none; }
+    h1 { font-size: 1.75rem; line-height: 1.3; margin: 0 0 8px; }
+    .tagline { color: var(--muted); margin: 0 0 24px; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 24px; }
+    label, .field-label { display: block; font-weight: 600; margin: 0 0 6px; }
+    .field { display: flex; flex-wrap: wrap; gap: 8px; }
+    .field input { flex: 1 1 240px; min-width: 0; padding: 10px 12px; font: inherit; color: inherit; border: 1px solid var(--input-border); border-radius: 8px; background: #fff; }
+    .field input:focus { outline: 2px solid var(--primary); outline-offset: 1px; }
+    .field input[aria-invalid="true"] { border-color: var(--error); }
+    .hint { color: var(--muted); font-size: 0.875rem; margin: 8px 0 0; }
+    .btn { padding: 10px 18px; font: inherit; font-weight: 600; border: 1px solid var(--primary); border-radius: 8px; background: var(--primary); color: #fff; cursor: pointer; }
+    .btn:hover { background: var(--primary-hover); border-color: var(--primary-hover); }
+    .btn-secondary { background: #fff; color: var(--primary); }
+    .btn-secondary:hover { background: #eff6ff; border-color: var(--primary); }
+    .alert { margin: 0 0 16px; padding: 10px 12px; border: 1px solid var(--error-border); border-radius: 8px; background: var(--error-bg); color: var(--error); }
+    .short-url { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 0 0 4px; }
+    .short-url a { font-size: 1.25rem; font-weight: 700; color: var(--primary); overflow-wrap: anywhere; }
+    .copy-status { min-height: 1.5em; margin: 0 0 16px; color: var(--muted); font-size: 0.875rem; }
+    .original-url { margin: 0; color: var(--muted); overflow-wrap: anywhere; word-break: break-all; }
+    .links a { color: var(--primary); }
+  </style>
+</head>
+<body>
+  <main>
+    <!-- 없는 코드로 GET /{code}, 상태 코드 404 -->
+    <a class="brand" href="/">ShortLink</a>
+    <h1>링크를 찾을 수 없습니다</h1>
+    <p class="tagline">주소가 잘못되었거나 존재하지 않는 단축 링크입니다.</p>
+    <p class="links"><a href="/">홈으로 가기</a></p>
+  </main>
+</body>
+</html>

@@ -1,0 +1,16 @@
+---
+seq: 15
+sender: "human"
+receiver: "main"
+type: "H-INPUT"
+timestamp: "2026-10-29T06:42:03.495Z"
+agent: ""
+agent_id: ""
+turn: 0
+reply_to: null
+chars: 2
+tokens_est: 2
+wait_s: 69.5
+---
+
+진행

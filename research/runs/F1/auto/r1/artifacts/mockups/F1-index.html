@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>F1 화면 목업</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --border: #e5e7eb;
+      --input-border: #d1d5db;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --error: #b91c1c;
+      --error-bg: #fef2f2;
+      --error-border: #fecaca;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+    main { max-width: 640px; margin: 0 auto; padding: 40px 16px; }
+    .brand { display: inline-block; margin-bottom: 16px; font-weight: 700; color: var(--primary); text-decoration: none; }
+    h1 { font-size: 1.75rem; line-height: 1.3; margin: 0 0 8px; }
+    .tagline { color: var(--muted); margin: 0 0 24px; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 24px; }
+    label, .field-label { display: block; font-weight: 600; margin: 0 0 6px; }
+    .field { display: flex; flex-wrap: wrap; gap: 8px; }
+    .field input { flex: 1 1 240px; min-width: 0; padding: 10px 12px; font: inherit; color: inherit; border: 1px solid var(--input-border); border-radius: 8px; background: #fff; }
+    .field input:focus { outline: 2px solid var(--primary); outline-offset: 1px; }
+    .field input[aria-invalid="true"] { border-color: var(--error); }
+    .hint { color: var(--muted); font-size: 0.875rem; margin: 8px 0 0; }
+    .btn { padding: 10px 18px; font: inherit; font-weight: 600; border: 1px solid var(--primary); border-radius: 8px; background: var(--primary); color: #fff; cursor: pointer; }
+    .btn:hover { background: var(--primary-hover); border-color: var(--primary-hover); }
+    .btn-secondary { background: #fff; color: var(--primary); }
+    .btn-secondary:hover { background: #eff6ff; border-color: var(--primary); }
+    .alert { margin: 0 0 16px; padding: 10px 12px; border: 1px solid var(--error-border); border-radius: 8px; background: var(--error-bg); color: var(--error); }
+    .short-url { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 0 0 4px; }
+    .short-url a { font-size: 1.25rem; font-weight: 700; color: var(--primary); overflow-wrap: anywhere; }
+    .copy-status { min-height: 1.5em; margin: 0 0 16px; color: var(--muted); font-size: 0.875rem; }
+    .original-url { margin: 0; color: var(--muted); overflow-wrap: anywhere; word-break: break-all; }
+    .links a { color: var(--primary); }
+    li { margin: 8px 0; }
+    code { background: #eef2f7; padding: 1px 4px; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>F1 화면 목업</h1>
+    <p class="tagline">단축 URL 생성과 리다이렉트. 문구, 배치, 색은 실제 구현의 기준이다. 목업 안의 <code>/</code> 링크는 실제 서버 경로라서 파일로 열면 동작하지 않는다.</p>
+    <ul class="card links">
+      <li><a href="F1-home.html">홈</a> — <code>GET /</code>, 200</li>
+      <li><a href="F1-result.html">결과</a> — <code>POST /</code> 성공, 200</li>
+      <li><a href="F1-error.html">입력 오류</a> — <code>POST /</code> 실패, 422</li>
+      <li><a href="F1-not-found.html">찾을 수 없음</a> — 없는 코드로 <code>GET /{code}</code>, 404</li>
+    </ul>
+  </main>
+</body>
+</html>

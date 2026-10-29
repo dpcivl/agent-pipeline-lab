@@ -1,0 +1,9 @@
+agent,agent_type,model,turns,system_prompt_chars,calls,input,cache_write_5m,cache_write_1h,cache_read,output,thinking,cost_usd
+main,main,claude-opus-5-5,,30328,44,116,0,122784,5809265,47449,5807,3.0936
+implementer,implementer,claude-sonnet-5-5,2,2000,12,26,95389,0,358264,13370,2071,0.4081
+test-writer,test-writer,claude-sonnet-5-5,2,2052,12,26,61846,0,510264,27121,4524,0.4769
+tester,tester,claude-sonnet-5-5,2,2017,4,10,9628,0,26272,820,0,0.0349
+reviewer,reviewer,claude-opus-5-5,2,2073,10,22,67357,0,351795,12052,4971,0.6483
+qa,qa,claude-sonnet-5-5,2,2600,15,32,47961,0,486031,14141,1525,0.3100
+security,security,claude-opus-5-5,2,2278,12,26,46190,0,304513,17777,5970,0.6475
+doc-keeper,doc-keeper,claude-haiku-5-5,1,1999,8,16,37338,0,194618,9768,1937,0.0115
