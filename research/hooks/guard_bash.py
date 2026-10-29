@@ -7,7 +7,7 @@
 
 The research session in the main repository can push. A blocked call exits with
 code 2, Claude Code shows the stderr message to the agent, and the block is
-appended to research/logs/agent-events.jsonl.
+recorded under research/logs/events/.
 """
 
 from __future__ import annotations
@@ -16,8 +16,10 @@ import json
 import os
 import re
 import sys
-from datetime import UTC, datetime
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from eventlog import write_event
 
 # `git push`, also with options before the subcommand (git -C dir push, git -c k=v push).
 GIT_PUSH_RE = re.compile(r"(?:^|[;&|(\s])git(?:\s+-{1,2}\S+(?:\s+(?!push\b)\S+)?)*\s+push\b")
@@ -41,19 +43,20 @@ def main() -> int:
     else:
         return 0
 
-    log_dir = project / "research" / "logs"
-    log_dir.mkdir(parents=True, exist_ok=True)
-    entry = {
-        "hook_event_name": "GuardBlocked",
-        "received_at": datetime.now(UTC).isoformat(timespec="milliseconds"),
-        "agent_type": agent_type,
-        "agent_id": payload.get("agent_id"),
-        "tool_name": payload.get("tool_name"),
-        "tool_input": payload.get("tool_input"),
-        "reason": reason,
-    }
-    with (log_dir / "agent-events.jsonl").open("a", encoding="utf-8") as fh:
-        fh.write(json.dumps(entry, ensure_ascii=False) + "\n")
+    try:
+        write_event(
+            project,
+            {
+                "hook_event_name": "GuardBlocked",
+                "agent_type": agent_type,
+                "agent_id": payload.get("agent_id"),
+                "tool_name": payload.get("tool_name"),
+                "tool_input": payload.get("tool_input"),
+                "reason": reason,
+            },
+        )
+    except OSError:
+        pass  # logging must not weaken the block
     print(reason, file=sys.stderr)
     return 2
 

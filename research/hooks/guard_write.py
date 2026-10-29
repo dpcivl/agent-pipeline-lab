@@ -6,7 +6,7 @@ below are limited to their write areas, and every subagent is blocked from writi
 outside the project folder.
 
 A blocked call exits with code 2; Claude Code shows the stderr message to the
-agent. Every block is also appended to research/logs/agent-events.jsonl.
+agent. Every block is also recorded under research/logs/events/.
 """
 
 from __future__ import annotations
@@ -14,8 +14,10 @@ from __future__ import annotations
 import json
 import os
 import sys
-from datetime import UTC, datetime
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from eventlog import write_event
 
 WRITE_AREAS = {
     "implementer": ("src/shortlink/", "pyproject.toml", "uv.lock"),
@@ -29,19 +31,17 @@ WRITE_AREAS = {
 
 
 def log_block(project: Path, payload: dict, reason: str) -> None:
-    entry = {
-        "hook_event_name": "GuardBlocked",
-        "received_at": datetime.now(UTC).isoformat(timespec="milliseconds"),
-        "agent_type": payload.get("agent_type"),
-        "agent_id": payload.get("agent_id"),
-        "tool_name": payload.get("tool_name"),
-        "tool_input": payload.get("tool_input"),
-        "reason": reason,
-    }
-    log_dir = project / "research" / "logs"
-    log_dir.mkdir(parents=True, exist_ok=True)
-    with (log_dir / "agent-events.jsonl").open("a", encoding="utf-8") as fh:
-        fh.write(json.dumps(entry, ensure_ascii=False) + "\n")
+    write_event(
+        project,
+        {
+            "hook_event_name": "GuardBlocked",
+            "agent_type": payload.get("agent_type"),
+            "agent_id": payload.get("agent_id"),
+            "tool_name": payload.get("tool_name"),
+            "tool_input": payload.get("tool_input"),
+            "reason": reason,
+        },
+    )
 
 
 def main() -> int:

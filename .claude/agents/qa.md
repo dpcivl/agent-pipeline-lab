@@ -13,8 +13,9 @@ effort: medium
 - **저장소 안의 어떤 파일도 수정하지 않는다.** 코드를 읽어 판단하지 말고, 서버에 요청을 보내 관찰한 결과로 판단한다.
 - 서버 실행 예시 (임시 DB, 별도 포트):
   `SHORTLINK_DB_PATH="$(mktemp -d)/qa.db" SHORTLINK_BASE_URL=http://127.0.0.1:8765 uv run uvicorn shortlink.main:create_app --factory --port 8765 &`
+- 서버를 띄운 뒤 첫 요청 전에 응답이 올 때까지 기다린다. 예: `curl -s -o /dev/null http://127.0.0.1:8765/openapi.json`를 1초 간격으로 최대 30번 반복한다.
 - 요청은 `curl -s -i`로 보내고, 상태 코드와 헤더와 본문을 확인한다.
-- 끝나면 서버를 반드시 종료한다.
+- 끝나면 서버를 반드시 종료하고 포트가 비었는지 확인한다. Windows에서 `kill`로 종료되지 않으면 `taskkill //F //T //PID <pid>`를 쓴다.
 - 2라운드부터는 이전 지적의 해결 여부와 바뀐 동작만 다시 확인한다.
 
 ## 심각도

@@ -1,9 +1,10 @@
-"""Claude Code hook: append every received event to research/logs/agent-events.jsonl.
+"""Claude Code hook: record every received event under research/logs/events/.
 
 Registered in .claude/settings.json for UserPromptSubmit, PreToolUse/PostToolUse
-(Agent, SendMessage), SubagentStart, and SubagentStop. The log is private
-(git-ignored); collect.py uses transcripts as the source of truth and this log
-as a timing cross-check. The hook never blocks: it always exits 0.
+(Agent, SendMessage), SubagentStart, and SubagentStop. Each event is its own file
+(see eventlog.py) because parallel subagents fire hooks at the same time. The log
+is private (git-ignored); collect.py uses transcripts as the source of truth and
+these events as a timing cross-check. The hook never blocks: it always exits 0.
 """
 
 from __future__ import annotations
@@ -11,8 +12,10 @@ from __future__ import annotations
 import json
 import os
 import sys
-from datetime import UTC, datetime
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from eventlog import write_event
 
 
 def main() -> None:
@@ -20,12 +23,8 @@ def main() -> None:
         payload = json.loads(sys.stdin.read() or "{}")
     except json.JSONDecodeError:
         payload = {"unparsed": True}
-    payload["received_at"] = datetime.now(UTC).isoformat(timespec="milliseconds")
     project = Path(os.environ.get("CLAUDE_PROJECT_DIR") or payload.get("cwd") or ".")
-    log_dir = project / "research" / "logs"
-    log_dir.mkdir(parents=True, exist_ok=True)
-    with (log_dir / "agent-events.jsonl").open("a", encoding="utf-8") as fh:
-        fh.write(json.dumps(payload, ensure_ascii=False) + "\n")
+    write_event(project, payload)
 
 
 if __name__ == "__main__":

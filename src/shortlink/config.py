@@ -18,11 +18,15 @@ DEFAULT_BASE_URL = "http://localhost:8000"
 @dataclass(frozen=True)
 class Settings:
     db_path: str = DEFAULT_DB_PATH  # env: SHORTLINK_DB_PATH
-    base_url: str = DEFAULT_BASE_URL  # env: SHORTLINK_BASE_URL (no trailing slash)
+    base_url: str = DEFAULT_BASE_URL  # env: SHORTLINK_BASE_URL (stored without trailing slash)
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "base_url", self.base_url.rstrip("/"))
 
     @classmethod
     def from_env(cls) -> Settings:
+        # An empty variable counts as unset.
         return cls(
-            db_path=os.environ.get("SHORTLINK_DB_PATH", DEFAULT_DB_PATH),
-            base_url=os.environ.get("SHORTLINK_BASE_URL", DEFAULT_BASE_URL).rstrip("/"),
+            db_path=os.environ.get("SHORTLINK_DB_PATH") or DEFAULT_DB_PATH,
+            base_url=os.environ.get("SHORTLINK_BASE_URL") or DEFAULT_BASE_URL,
         )

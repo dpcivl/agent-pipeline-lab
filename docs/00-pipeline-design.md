@@ -11,6 +11,7 @@
 - v1.5 (2026-10-29): 모델 배정 확정. 사람 개입 vs 자율 비교 실험 설계 추가 (5절)
 - v1.6 (2026-10-29): 연구 계획서(01-research-plan.md)와 연구 일지 폴더를 레포 구조에 반영
 - v1.7 (2026-10-29): 에이전트 간 소통 분석 축 추가 (6절). L2 지시 프롬프트는 자유, L3 보고는 형식 고정으로 확정. 메시지 단위 수집 구조로 변경
+- v1.11 (2026-10-29): 에이전트 7종 호출 검증. hook 이벤트를 이벤트마다 별도 파일로 기록(병렬 기록 시 줄이 섞이는 문제), Bash를 통한 쓰기는 쓰기 영역 hook으로 막히지 않는다는 한계 기록, 고정 계약 보완(base_url 끝 슬래시 정리, 빈 환경 변수는 미설정으로 처리)
 - v1.10 (2026-10-29): `git push` 금지를 설정의 deny 규칙에서 `guard_bash.py` hook으로 이동. 서브에이전트와 실험 worktree에서만 차단하고 연구 세션은 push 가능
 - v1.9 (2026-10-29): 세팅(P1) 결과 반영. Sonnet 5.5 cache read 단가 정정($0.20 → $0.10)과 배정 근거 수정, 역할별 effort 확정, 시스템 프롬프트가 트랜스크립트에 기록됨을 확인, 이어서 호출과 보고 전달의 기록 형식 확인, 쓰기 영역 훅 추가, doc-keeper 쓰기 영역을 `docs/service.md`로 변경, 앱 실행을 팩토리 방식으로 변경, human-log 자동 생성
 - v1.8 (2026-10-29): 레포 구조 확정 (7절). 계약 부분(진입점, 설정, 테스트 픽스처)만 고정하고 나머지는 메인이 결정. 에이전트별 쓰기 영역, 실행 worktree에서 연구 문서 제외
@@ -164,7 +165,7 @@ Fable 5.1은 쓰지 않습니다. Opus 5.5 대비 단가가 2.5배이고, 이 �
 
 ### B. Hooks 실시간 로깅 (보조)
 `.claude/settings.json`에 프로젝트 hooks를 등록합니다. 내용은 `research/config/claude-settings.json`에 있으며, Claude Code 설정 파일이라 **사람이 직접 설치**합니다.
-- `log_agent_event.py`: `UserPromptSubmit`, `PreToolUse`/`PostToolUse`(matcher `Agent|SendMessage`), `SubagentStart`, `SubagentStop`의 입력 전체를 `research/logs/agent-events.jsonl`에 추가. `PostToolUse`의 Agent `tool_response`에는 usage와 소요 시간이 담김
+- `log_agent_event.py`: `UserPromptSubmit`, `PreToolUse`/`PostToolUse`(matcher `Agent|SendMessage`), `SubagentStart`, `SubagentStop`의 입력 전체를 `research/logs/events/`에 이벤트마다 파일 하나로 기록. 병렬 서브에이전트가 한 파일에 동시에 이어 쓰면 줄이 섞이기 때문(검증 중 확인). `PostToolUse`의 Agent `tool_response`에는 usage와 소요 시간이 담김
 - `guard_write.py`: `PreToolUse`(matcher `Write|Edit|NotebookEdit`). 서브에이전트가 7.3절 쓰기 영역 밖에 쓰면 차단하고 기록
 - `guard_bash.py`: `PreToolUse`(matcher `Bash`). 서브에이전트이거나 실험 worktree(`research/tools/`가 없는 sparse worktree)이면 `git push`를 차단하고 기록. 연구 세션은 push 가능
 - 같은 파일의 `permissions`에 테스트·린트·git 조회 명령을 허용. `git push` 금지는 deny 규칙이 아니라 위 hook으로 처리 (deny 규칙은 연구 세션의 push까지 막기 때문)
@@ -172,6 +173,8 @@ Fable 5.1은 쓰지 않습니다. Opus 5.5 대비 단가가 2.5배이고, 이 �
 ### C. 한계 (연구 보고서에 명시)
 - 서브에이전트의 **시스템 프롬프트**는 트랜스크립트의 `prompt_snapshot` 첨부에 기록됩니다 (세팅 중 확인, Claude Code 2.1.308). Claude Code 내장 프롬프트가 포함되고 세션 정보가 섞인 첨부도 있으므로 원문은 공개하지 않고, `collect.py`가 크기(글자 수)만 `agents.csv`에 남깁니다. 고정 오버헤드 토큰은 역할별 빈 작업 실행으로 따로 측정합니다.
 - CLAUDE.md는 모든 서브에이전트에 주입되므로 **짧게** 유지해야 합니다(토큰 비용 변수).
+- 쓰기 영역 hook(`guard_write.py`)은 Write/Edit 도구만 검사합니다. Bash의 리다이렉션이나 heredoc으로 쓰는 경우는 막지 못하므로, 실행 후 `git diff`로 에이전트별 변경 파일을 사후 확인합니다.
+- 데스크톱 앱의 auto 권한 모드는 서브에이전트에게도 "파일 작업은 가능하면 Bash로 하라"는 지침을 주입합니다(검증 중 확인). 이 모드로 실험하면 쓰기 영역 hook을 우회하는 쓰기가 늘고, 도구 사용 패턴도 달라집니다. 실험에서 쓸 권한 모드는 파일럿(P3) 전에 정합니다.
 
 ---
 
