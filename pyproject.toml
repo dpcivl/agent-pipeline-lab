@@ -20,6 +20,8 @@ testpaths = ["tests"]
 [tool.ruff]
 line-length = 100
 target-version = "py312"
+# Archived run records are data, not code to maintain.
+extend-exclude = ["research/runs"]
 
 [dependency-groups]
 dev = [

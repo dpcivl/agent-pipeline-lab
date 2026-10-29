@@ -167,7 +167,7 @@ def main() -> int:
     }
     (run_dir / "promoted.json").write_text(json.dumps(record, indent=2) + "\n", encoding="utf-8")
     print(f"main {head[:8]}: {final_subject}")
-    print(f"squashed {len(subjects)} commits ({checkpoints} checkpoints) from {branch}")
+    print(f"applied {len(subjects)} commits ({checkpoints} checkpoints) from {branch}")
     if not args.no_tag:
         print(f"tagged {next_tag}")
     print("not pushed; push main and tags when ready: git push && git push --tags")

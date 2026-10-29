@@ -11,6 +11,7 @@
 - v1.5 (2026-10-29): 모델 배정 확정. 사람 개입 vs 자율 비교 실험 설계 추가 (5절)
 - v1.6 (2026-10-29): 연구 계획서(01-research-plan.md)와 연구 일지 폴더를 레포 구조에 반영
 - v1.7 (2026-10-29): 에이전트 간 소통 분석 축 추가 (6절). L2 지시 프롬프트는 자유, L3 보고는 형식 고정으로 확정. 메시지 단위 수집 구조로 변경
+- v1.19 (2026-10-29): 실행 격리 강화(7.4절). 실행 브랜치를 부모 없는 출발 커밋에서 시작, 실험 worktree에서 다른 브랜치·연구 저장소 접근을 hook으로 차단, 평가 테스트 표식 검사, `promote.py`는 패치 방식으로 변경. 연구자가 "git 범위 밖이라고 에이전트가 안 읽을까"라고 문제를 제기해 점검한 결과, worktree의 공유 이력으로 평가 테스트가 보이는 통로를 확인
 - v1.18 (2026-10-29): 숨긴 평가 테스트 위치를 저장소 밖에서 `research/eval/`로 변경(실험 worktree에는 포함되지 않음, 버전 관리 가능). `collect.py`가 평가 폴더 접근 흔적을 검사. F2·F3 설계서 초안
 - v1.17 (2026-10-29): 파일럿 결과 반영. 실행 보고서에 "결과 확인 방법"을 넣고 메인이 마지막 메시지로 사람에게 알리도록 지침 수정. 메시지 코드북 v0.2(C-COORD, C-REPEAT). 첫 인사이트 카드 PI-001, PI-002
 - v1.16 (2026-10-29): 대상 서비스를 **웹 화면이 있는 웹 서비스**로 확장(연구자 결정). FastAPI + Jinja2 서버 렌더링. 1단계에 화면 목업 제작과 사람의 목업 확인(H1) 추가. 고정 계약에 템플릿·정적 파일 위치 추가. 에이전트 정의를 화면 작업에 맞게 수정
@@ -477,17 +478,41 @@ agent-pipeline-lab/
 | tester, reviewer, qa, security | 없음 (읽기 전용) | 실행 후 `git status`로 확인 |
 | doc-keeper | `docs/service.md`, `CHANGELOG.md`, git commit | 루트 `README.md`는 연구 저장소 소개라 제외 |
 
-### 7.4 실행 worktree 구성
+### 7.4 실행 worktree 구성과 격리 (v1.19)
 
-비교 실험의 각 실행은 별도 worktree에서 돌립니다. 에이전트가 연구 문서를 읽으면 행동이 달라질 수 있으므로, **sparse-checkout으로 연구용 파일을 빼고** 만듭니다. sparse-checkout으로 빠진 파일은 커밋 시 삭제로 잡히지 않습니다.
+비교 실험의 각 실행은 별도 worktree에서 돌립니다. 에이전트가 연구 문서나 숨긴 평가 테스트, 다른 실행의 결과를 보면 행동이 달라지므로 세 겹으로 막고 잡습니다.
+
+**1. 연구 이력이 없는 출발 커밋 (막기)**
+
+`new_run.py`가 실행마다 에이전트용 파일만 담은 **부모 없는 커밋**을 만들고 그 위에서 실행 브랜치를 시작합니다. 실행 안에서 `git log`를 해도 이 출발 커밋 하나만 보입니다.
 
 | 포함 | 제외 |
 |---|---|
-| `src/`, `tests/`, `.claude/`, `CLAUDE.md`, `pyproject.toml`, `uv.lock`, `research/hooks/` | `docs/00-*`, `docs/01-*`, `docs/insights/`, `docs/journal/` |
-| `docs/features/`의 **현재 기능 설계서만**, `docs/plans/` | `research/tools/`, `research/config/`, `research/runs/`, `research/REPORT.md` |
+| `src/`, `tests/`, `.claude/`, `CLAUDE.md`, `pyproject.toml`, `uv.lock`, `.python-version`, `.gitignore`, `research/hooks/` | `docs/00-*`, `docs/01-*`, `docs/insights/`, `docs/journal/`, `README.md` |
+| `docs/features/`의 **현재와 이전 기능 설계서**, `docs/plans/`, `docs/service.md`, `CHANGELOG.md` | `research/tools/`, `research/config/`, `research/eval/`, `research/runs/` |
 
-- 다음 기능의 설계서를 미리 보면 구현이 달라질 수 있으므로 현재 기능 설계서만 넣습니다.
-- hook 로그는 worktree 안의 `research/logs/`(비공개)에 쌓이고, 실행이 끝나면 `collect.py`가 레포의 `research/runs/`로 모읍니다.
+- 다음 기능의 설계서는 넣지 않습니다. F2 실행은 호환성 요구 때문에 F1·F2 설계서를 봅니다.
+- (v1.18까지는 main에서 갈라진 브랜치에 sparse checkout을 썼으나, worktree가 git 이력을 공유해 `git log`와 `git show main:...`으로 연구 커밋과 평가 테스트가 보였습니다.)
+
+**2. hook으로 다른 기록 접근 차단 (막기)**
+
+실험 worktree 안에서는 메인 세션과 서브에이전트 모두에 다음을 적용합니다(`research/hooks/runscope.py`). 연구 세션에는 적용하지 않습니다.
+
+| hook | 막는 것 |
+|---|---|
+| `guard_bash.py` | 다른 브랜치나 전체 이력을 보는 git 명령(`--all`, `main`, `origin`, 다른 `run/` 브랜치, 태그, `git branch`, `git stash`, `git cat-file` 등), 연구 저장소 경로나 `research/eval`을 언급하는 명령, `git push` |
+| `guard_read.py` | Read, Glob, Grep으로 프로젝트 폴더 밖이나 연구 저장소를 읽는 것 |
+| `guard_write.py` | 프로젝트 폴더 밖에 쓰는 것, 역할별 쓰기 영역 밖에 쓰는 것 |
+
+**3. 평가 테스트 표식 검사 (잡기)**
+
+- 숨긴 평가 테스트 파일마다 고유한 표식(`EVAL-CANARY-...`)을 넣고, 테스트 함수 이름은 모두 `test_hidden_`으로 시작합니다.
+- `collect.py`는 실행의 모든 트랜스크립트에서 (a) 평가 폴더를 언급한 도구 입력과 (b) 표식이나 `test_hidden_`이 들어간 도구 결과를 찾아 `eval-access.json`에 남깁니다.
+- 하나라도 있으면 그 실행은 무효로 하고 다시 돌립니다. 1·2를 어떤 식으로 우회했든 내용이 에이전트에게 들어갔다면 잡힙니다.
+
+남는 한계: Bash로 경로를 우회해서 만드는 경우(상위 폴더로 이동해 목록 보기 등)는 hook이 완벽히 막지 못하며, 3번 검사로 잡습니다. GitHub의 공개 저장소에서 가져오는 경우도 3번에 걸립니다.
+
+- hook 로그는 worktree 안의 `research/logs/`(비공개)에 쌓이고, 실행이 끝나면 `collect.py`가 연구 저장소의 `research/runs/`로 모읍니다.
 
 ### 7.5 형상 관리 (확정 2026-10-29)
 
@@ -497,7 +522,7 @@ agent-pipeline-lab/
 |---|---|---|---|
 | 실행 브랜치 `run/<기능>-<모드>-r<반복>` | 체크포인트 커밋 `wip(F1): <단계> <내용>` | 메인 세션 | 리뷰 2라운드부터 "직전 리뷰 체크포인트 이후 변경분"의 기준점, 단계별 코드 변화 기록(연구 데이터) |
 | 실행 브랜치의 마지막 커밋 | 기능 커밋 `F1: <요약>` | doc-keeper | 서비스 문서, CHANGELOG, 계획, 결정 기록, 실행 보고서를 포함한 남은 변경 전체 |
-| main | 기능마다 squash 커밋 하나 + 다음 기능의 시작 태그 `baseline-F<n+1>` | 연구 세션 (`promote.py`) | 기능 단위 형상 관리 |
+| main | 기능마다 커밋 하나(실행 브랜치의 변경을 패치로 적용) + 다음 기능의 시작 태그 `baseline-F<n+1>` | 연구 세션 (`promote.py`) | 기능 단위 형상 관리 |
 
 체크포인트 시점 (오케스트레이션 지침 `run-feature`):
 
@@ -512,7 +537,7 @@ agent-pipeline-lab/
 - 커밋 명령은 `git add -A --sparse`를 씁니다. 실행 worktree는 sparse 상태라서, 영역 밖에 파일이 하나라도 생기면 `--sparse` 없이는 `git add`가 실패합니다(검증 중 확인).
 - 실행 보고서는 doc-keeper보다 먼저 써서 기능 커밋 하나에 함께 담습니다.
 - `collect.py --worktree`는 실행 브랜치의 커밋 목록을 `checkpoints.csv`로 남기고, 쓰기 영역 밖에서 바뀐 파일을 표시합니다.
-- `promote.py F1 auto 1`은 선택한 실행을 main에 squash 병합하고 `baseline-F2` 태그를 붙입니다. 쓰기 영역 밖 변경이 있으면 거절하고, 사람이 확인한 뒤 `--allow-outside`로 진행합니다. push는 하지 않습니다.
+- `promote.py F1 auto 1`은 선택한 실행의 변경(출발 커밋..실행 브랜치)을 main에 3-way 패치로 적용해 커밋 하나로 만들고 `baseline-F2` 태그를 붙입니다. 실행 브랜치가 main과 이력을 공유하지 않기 때문입니다. 쓰기 영역 밖 변경이 있으면 거절하고, 사람이 확인한 뒤 `--allow-outside`로 진행합니다. push는 하지 않습니다.
 - 실행 세션은 브랜치를 바꾸거나 main을 건드리지 않고, push도 하지 않습니다(`guard_bash.py`).
 
 ---
