@@ -446,7 +446,49 @@ def main() -> int:
         print(
             f"{len(rows)} commits on the run branch; files outside write areas: {outside or 'none'}"
         )
+
+    hits = eval_access(main_path, agent_files)
+    (out / "eval-access.json").write_text(
+        json.dumps({"hits": len(hits), "details": hits}, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    if hits:
+        print(
+            f"WARNING: {len(hits)} tool calls touched the hidden evaluation tests; see eval-access.json"
+        )
+    else:
+        print("no access to the hidden evaluation tests")
     return 0
+
+
+# Hidden evaluation tests live in the research repository only (research/eval/). A run whose
+# agents reached them is invalid (docs/00-pipeline-design.md section 5.2).
+EVAL_PATH_MARKERS = (
+    "research/eval",
+    "research\\eval",
+    "research\\\\eval",
+    "agent-pipeline-lab-eval",
+)
+
+
+def eval_access(main_path: Path, agent_files: list[Path]) -> list[dict]:
+    """Tool calls in the main or subagent transcripts whose input mentions the eval folder."""
+    hits = []
+    for path in [main_path, *agent_files]:
+        who = "main" if path == main_path else path.stem
+        for rec in read_jsonl(path):
+            content = (rec.get("message") or {}).get("content")
+            if rec.get("type") != "assistant" or not isinstance(content, list):
+                continue
+            for block in content:
+                if not (isinstance(block, dict) and block.get("type") == "tool_use"):
+                    continue
+                text = json.dumps(block.get("input", {}), ensure_ascii=False)
+                if any(marker in text for marker in EVAL_PATH_MARKERS):
+                    hits.append(
+                        {"who": who, "tool": block.get("name"), "timestamp": rec.get("timestamp")}
+                    )
+    return hits
 
 
 # ---------------------------------------------------------------- git history of a run

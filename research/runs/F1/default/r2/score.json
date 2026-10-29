@@ -1,5 +1,14 @@
 {
-  "eval": null,
+  "eval": {
+    "tests": 107,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "passed": 107,
+    "failed_ids": [],
+    "pass_rate": 1.0,
+    "exit_code": 0
+  },
   "own_tests": {
     "tests": 224,
     "failures": 0,
