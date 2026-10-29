@@ -58,7 +58,10 @@ def mentions_research(text: str, project: Path) -> str | None:
         if marker in norm:
             return marker
     root = research_root(project)
-    if root and root in norm:
+    # The root must end at a path boundary: run folders live next to the research
+    # repository (".../agent-pipeline-lab-runs/..."), so a plain substring test would
+    # wrongly match every absolute path inside the run itself.
+    if root and re.search(re.escape(root) + r"(?![a-z0-9._-])", norm):
         return "the research repository path"
     return None
 
