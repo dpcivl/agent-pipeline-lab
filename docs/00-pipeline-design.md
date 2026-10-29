@@ -11,6 +11,7 @@
 - v1.5 (2026-10-29): 모델 배정 확정. 사람 개입 vs 자율 비교 실험 설계 추가 (5절)
 - v1.6 (2026-10-29): 연구 계획서(01-research-plan.md)와 연구 일지 폴더를 레포 구조에 반영
 - v1.7 (2026-10-29): 에이전트 간 소통 분석 축 추가 (6절). L2 지시 프롬프트는 자유, L3 보고는 형식 고정으로 확정. 메시지 단위 수집 구조로 변경
+- v1.10 (2026-10-29): `git push` 금지를 설정의 deny 규칙에서 `guard_bash.py` hook으로 이동. 서브에이전트와 실험 worktree에서만 차단하고 연구 세션은 push 가능
 - v1.9 (2026-10-29): 세팅(P1) 결과 반영. Sonnet 5.5 cache read 단가 정정($0.20 → $0.10)과 배정 근거 수정, 역할별 effort 확정, 시스템 프롬프트가 트랜스크립트에 기록됨을 확인, 이어서 호출과 보고 전달의 기록 형식 확인, 쓰기 영역 훅 추가, doc-keeper 쓰기 영역을 `docs/service.md`로 변경, 앱 실행을 팩토리 방식으로 변경, human-log 자동 생성
 - v1.8 (2026-10-29): 레포 구조 확정 (7절). 계약 부분(진입점, 설정, 테스트 픽스처)만 고정하고 나머지는 메인이 결정. 에이전트별 쓰기 영역, 실행 worktree에서 연구 문서 제외
 
@@ -165,7 +166,8 @@ Fable 5.1은 쓰지 않습니다. Opus 5.5 대비 단가가 2.5배이고, 이 �
 `.claude/settings.json`에 프로젝트 hooks를 등록합니다. 내용은 `research/config/claude-settings.json`에 있으며, Claude Code 설정 파일이라 **사람이 직접 설치**합니다.
 - `log_agent_event.py`: `UserPromptSubmit`, `PreToolUse`/`PostToolUse`(matcher `Agent|SendMessage`), `SubagentStart`, `SubagentStop`의 입력 전체를 `research/logs/agent-events.jsonl`에 추가. `PostToolUse`의 Agent `tool_response`에는 usage와 소요 시간이 담김
 - `guard_write.py`: `PreToolUse`(matcher `Write|Edit|NotebookEdit`). 서브에이전트가 7.3절 쓰기 영역 밖에 쓰면 차단하고 기록
-- 같은 파일의 `permissions`에 테스트·린트·git 조회 명령을 허용하고 `git push`를 금지
+- `guard_bash.py`: `PreToolUse`(matcher `Bash`). 서브에이전트이거나 실험 worktree(`research/tools/`가 없는 sparse worktree)이면 `git push`를 차단하고 기록. 연구 세션은 push 가능
+- 같은 파일의 `permissions`에 테스트·린트·git 조회 명령을 허용. `git push` 금지는 deny 규칙이 아니라 위 hook으로 처리 (deny 규칙은 연구 세션의 push까지 막기 때문)
 
 ### C. 한계 (연구 보고서에 명시)
 - 서브에이전트의 **시스템 프롬프트**는 트랜스크립트의 `prompt_snapshot` 첨부에 기록됩니다 (세팅 중 확인, Claude Code 2.1.308). Claude Code 내장 프롬프트가 포함되고 세션 정보가 섞인 첨부도 있으므로 원문은 공개하지 않고, `collect.py`가 크기(글자 수)만 `agents.csv`에 남깁니다. 고정 오버헤드 토큰은 역할별 빈 작업 실행으로 따로 측정합니다.

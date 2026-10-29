@@ -15,10 +15,6 @@
       "Bash(mktemp *)",
       "Bash(sleep *)",
       "Bash(kill *)"
-    ],
-    "deny": [
-      "Bash(git push)",
-      "Bash(git push *)"
     ]
   },
   "hooks": {
@@ -50,6 +46,15 @@
           {
             "type": "command",
             "command": "python \"$CLAUDE_PROJECT_DIR/research/hooks/guard_write.py\""
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"$CLAUDE_PROJECT_DIR/research/hooks/guard_bash.py\""
           }
         ]
       }
