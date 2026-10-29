@@ -1,0 +1,30 @@
+[project]
+name = "shortlink"
+version = "0.1.0"
+description = "URL shortener API built by a Claude Code subagent pipeline (research target)"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "fastapi>=0.162.0",
+    "uvicorn[standard]>=0.54.0",
+]
+
+[build-system]
+requires = ["uv_build>=0.12.12,<0.13"]
+build-backend = "uv_build"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[dependency-groups]
+dev = [
+    "bandit>=1.9.4",
+    "httpx2>=2.16.0",
+    "pytest>=9.2.0",
+    "pytest-cov>=7.1.0",
+    "radon>=6.0.1",
+    "ruff>=0.17.3",
+]

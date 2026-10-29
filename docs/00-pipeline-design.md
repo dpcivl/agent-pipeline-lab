@@ -11,6 +11,7 @@
 - v1.5 (2026-10-29): 모델 배정 확정. 사람 개입 vs 자율 비교 실험 설계 추가 (5절)
 - v1.6 (2026-10-29): 연구 계획서(01-research-plan.md)와 연구 일지 폴더를 레포 구조에 반영
 - v1.7 (2026-10-29): 에이전트 간 소통 분석 축 추가 (6절). L2 지시 프롬프트는 자유, L3 보고는 형식 고정으로 확정. 메시지 단위 수집 구조로 변경
+- v1.9 (2026-10-29): 세팅(P1) 결과 반영. Sonnet 5.5 cache read 단가 정정($0.20 → $0.10)과 배정 근거 수정, 역할별 effort 확정, 시스템 프롬프트가 트랜스크립트에 기록됨을 확인, 이어서 호출과 보고 전달의 기록 형식 확인, 쓰기 영역 훅 추가, doc-keeper 쓰기 영역을 `docs/service.md`로 변경, 앱 실행을 팩토리 방식으로 변경, human-log 자동 생성
 - v1.8 (2026-10-29): 레포 구조 확정 (7절). 계약 부분(진입점, 설정, 테스트 픽스처)만 고정하고 나머지는 메인이 결정. 에이전트별 쓰기 영역, 실행 worktree에서 연구 문서 제외
 
 ---
@@ -34,7 +35,9 @@
 | 부모-자식 연결 | `meta.json`의 `toolUseId` = 부모 jsonl의 `Agent` tool_use 블록 id. 같은 id의 `tool_result`가 서브에이전트의 최종 보고 |
 | raw 프롬프트 | 서브에이전트 jsonl의 **첫 user 레코드** `message.content`가 메인이 보낸 프롬프트 원문 그대로 |
 | 토큰 | 모든 assistant 레코드에 `message.usage` (`input_tokens`, `output_tokens`, `cache_creation_input_tokens`, `cache_read_input_tokens`, `thinking_tokens`)와 `message.model` |
-| 기록되지 않는 것 | 각 서브에이전트에 붙는 **시스템 프롬프트 원문**(Claude Code 내장 + 에이전트 정의 .md + CLAUDE.md). 크기만 첫 호출의 `cache_creation_input_tokens`로 추정 가능 |
+| 시스템 프롬프트 | 트랜스크립트의 `prompt_snapshot` 첨부에 기록됨 (세팅 중 확인). 원문은 비공개, 크기만 집계 |
+| 이어서 호출 | 서브에이전트 트랜스크립트에 머리말이 붙은 `isMeta` user 레코드로 기록됨 |
+| 보고 전달 | 데스크톱 앱에서는 `SubagentHandback` 도구 호출로 전달됨 |
 | 도구 | uv 0.12.12, git 2.55, Python 3.12.10 |
 
 **중요한 구조적 사실:** Claude Code에서 서브에이전트끼리는 직접 대화하지 않습니다. 모든 통신 경로는 ① 메인 → 서브 (Agent 도구의 `prompt` 문자열 1개), ② 서브 → 메인 (서브의 마지막 assistant 텍스트가 tool_result로 반환), ③ 공유 파일시스템(설계서, 코드, 테스트) 세 가지뿐입니다. 따라서 "에이전트끼리의 소통"을 측정한다는 것은 ①②의 토큰과, 메인 세션이 ②를 읽고 다음 ①을 작성하는 데 쓰는 **오케스트레이션 오버헤드**를 측정하는 것입니다.
@@ -56,7 +59,7 @@
 | 1 | **수정 루프 없음.** S3가 테스트 실패를 발견해도 고치는 단계가 없고, S4/S5/S6가 깨진 코드를 동시에 리뷰함 | S3는 **실행·판정만** 하고 실패 원인을 분류해 보고 → 메인이 원인별로 S1(코드)·S2(테스트)에게 전달하고, 설계서 모호함은 메인이 해석을 결정해 기록 → S3 재실행(최대 5회). **green 게이트** 뒤에 S4/S5/S6 실행. 수정 주체를 S3에 두지 않는 이유: 판정자가 수정까지 하면 테스트를 고쳐 통과시키는 왜곡이 가능하고, 측정 대상인 에이전트 간 피드백 엣지가 사라짐 |
 | 2 | **S1·S2 병렬의 인터페이스 불일치.** 둘 다 설계서만 보면 함수명/모듈 경로/스키마가 어긋나 S3가 맞추느라 토큰을 태움 | 메인의 "목업" 산출물을 **인터페이스 스켈레톤**(시그니처 + docstring + `NotImplementedError` 스텁 파일, 테스트 파일명)으로 정의. 승인 대상에 포함 |
 | 3 | **리뷰 결과를 반영하는 단계 없음.** S4/S5/S6의 findings가 보고서에만 남음 | 리뷰 → 수정 → 테스트 → **재리뷰**를 반복하는 루프를 **최대 5라운드**. 심각도 blocker/major가 0건이 되면 종료. 무한 반복을 막기 위해 2라운드부터는 변경분과 이전 findings만 재검토하고, 같은 지적이 2라운드 연속 해결되지 않으면 "미해결"로 기록하고 제외 |
-| 4 | **쓰기 충돌.** 서브에이전트는 같은 작업 디렉터리를 공유 | S1은 `src/`만, S2는 `tests/`만 쓰도록 프롬프트와 에이전트 정의에서 제한. S3·S4·S5·S6는 **Edit/Write 도구 없이** 정의(`.claude/agents/*.md`의 `tools:`로 강제). S3·S5는 pytest·서버 실행에 Bash가 필요하므로 파일 수정 금지는 프롬프트로 지시하고, 실행 후 `git status`로 변경이 없었는지 확인 |
+| 4 | **쓰기 충돌.** 서브에이전트는 같은 작업 디렉터리를 공유 | S1은 `src/`만, S2는 `tests/`만 쓰도록 프롬프트와 에이전트 정의에서 제한. S3·S4·S5·S6는 **Edit/Write 도구 없이** 정의(`.claude/agents/*.md`의 `tools:`로 강제). S3·S5는 pytest·서버 실행에 Bash가 필요하므로 파일 수정 금지는 프롬프트로 지시하고, 실행 후 `git status`로 변경이 없었는지 확인. Write/Edit 도구는 `research/hooks/guard_write.py` 훅이 역할별 쓰기 영역 밖이면 차단 |
 | 5 | **역할 중복.** 리뷰/QA/보안의 경계가 흐리면 같은 지적을 3번 받음 | 리뷰=정적 코드 품질·정확성, QA=서비스를 실제로 띄워 설계서의 수용 기준을 블랙박스 검증, 보안=OWASP 체크리스트+의존성. 겹침 정도 자체도 연구 결과로 기록 |
 
 ### 개선된 파이프라인 (v2)
@@ -90,7 +93,7 @@
    종료 조건: blocker/major 0건 또는 5라운드 도달
    정체 방지: 같은 finding이 2라운드 연속 해결되지 않으면 "미해결"로 표시하고 이후 라운드에서 제외
    5라운드 후 남은 finding은 사람에게 묻지 않고 보고서의 "미해결" 항목으로 넘김
-8. doc-keeper (S7): README/CHANGELOG 갱신, git commit
+8. doc-keeper (S7): docs/service.md·CHANGELOG.md 갱신, git commit
 9. 보고서 (메인): research/runs/F{n}/summary.md
 ```
 
@@ -104,7 +107,9 @@
 ### 에이전트별 모델 배정 (v1.4, 확정 2026-10-29)
 
 배정 원칙: **판단의 정확도가 루프 횟수를 좌우하는 곳에는 상위 모델, 기계적인 작업에는 하위 모델.**
-리뷰·보안 계열은 코드를 많이 읽고 짧게 쓰는 입력 위주 작업입니다. Opus 5.5와 Sonnet 5.5의 cache read 단가가 같으므로 이 역할에서 Opus를 쓰는 추가 비용은 작습니다.
+리뷰·보안 계열은 코드를 많이 읽고 짧게 쓰는 입력 위주 작업이라 비용 대부분이 cache read에서 나옵니다. Opus 5.5는 Sonnet 5.5보다 cache read를 포함한 모든 단가가 2배이므로, 이 두 역할의 비용도 Sonnet을 쓸 때의 약 2배가 됩니다. 놓친 결함 때문에 루프가 늘어나는 비용이 더 크다고 보고 Opus를 유지합니다.
+
+> v1.9 정정: 이전 버전은 "Opus와 Sonnet의 cache read 단가가 같아 추가 비용이 작다"고 적었으나, 공식 가격표 확인 결과 Sonnet 5.5의 cache read는 $0.10으로 Opus 5.5($0.20)의 절반입니다.
 
 | 역할 | 모델 | 이유 |
 |---|---|---|
@@ -112,25 +117,34 @@
 | S1 implementer | Sonnet 5.5 | 단순한 FastAPI 서비스 구현은 Sonnet으로 충분. 출력 토큰이 가장 많은 역할이라 단가 차이가 크게 반영됨 |
 | S2 test-writer | Sonnet 5.5 | S1과 **같은 모델**로 맞춰 설계서 해석 능력 차이가 test_bug 비율에 섞이지 않게 함 |
 | S3 tester | Sonnet 5.5 | pytest 실행 자체는 단순하지만 실패 원인 3분류가 틀리면 수정 루프가 헛돌기 때문에 Haiku는 피함 |
-| S4 reviewer | Opus 5.5 | 미묘한 정확성 버그 발견이 모델 성능에 가장 민감. 입력 위주라 비용 증가가 작음 |
+| S4 reviewer | Opus 5.5 | 미묘한 정확성 버그 발견이 모델 성능에 가장 민감 |
 | S5 qa | Sonnet 5.5 | 수용 기준대로 서버를 띄워 요청을 보내는 블랙박스 검증. 절차적 작업 |
 | S6 security | Opus 5.5 | 놓친 취약점은 루프로도 잡히지 않음. 입력 위주 |
-| S7 doc-keeper | Haiku 5.5 | README/CHANGELOG 갱신과 git commit. 기계적 작업, 가장 저렴 |
+| S7 doc-keeper | Haiku 5.5 | `docs/service.md`·CHANGELOG 갱신과 git commit. 기계적 작업, 가장 저렴 |
 
 Fable 5.1은 쓰지 않습니다. Opus 5.5 대비 단가가 2.5배이고, 이 정도 규모의 서비스에서는 성능 차이가 비용을 정당화하기 어렵습니다.
 
-단가 (Anthropic API 기준, 2026-10-06 캐시, 1M 토큰당 USD):
+단가 (Anthropic API 공식 가격표, 2026-10-29 확인, 1M 토큰당 USD):
 
-| 모델 | ID | input | output | cache read |
-|---|---|---|---|---|
-| Fable 5.1 | `claude-fable-5-1` | 10.00 | 50.00 | 0.25 |
-| Opus 5.5 | `claude-opus-5-5` | 4.00 | 20.00 | 0.20 |
-| Sonnet 5.5 | `claude-sonnet-5-5` | 2.00 | 10.00 | 0.20 |
-| Haiku 5.5 | `claude-haiku-5-5` | 0.10 | 0.50 | (세팅 시 확인) |
+| 모델 | ID | input | cache write 5분 | cache write 1시간 | cache read | output |
+|---|---|---|---|---|---|---|
+| Fable 5.1 | `claude-fable-5-1` | 10.00 | 12.50 | 20.00 | 0.25 | 50.00 |
+| Opus 5.5 | `claude-opus-5-5` | 4.00 | 5.00 | 8.00 | 0.20 | 20.00 |
+| Sonnet 5.5 | `claude-sonnet-5-5` | 2.00 | 2.50 | 4.00 | 0.10 | 10.00 |
+| Haiku 5.5 | `claude-haiku-5-5` | 0.10 | 0.125 | 0.20 | 0.01 | 0.50 |
 
-- cache write 단가와 Haiku cache read는 세팅 단계에서 공식 가격 페이지로 확인해 `research/config/pricing.json`에 기록합니다.
+- 단가는 `research/config/pricing.json`에 기록되어 있고 `collect.py`가 비용 계산에 씁니다. Haiku 5.5 단가는 프롬프트 100K 토큰 이하 기준입니다.
 - Claude 구독(Pro/Max)으로 Claude Code를 쓰면 실제 청구는 토큰 단가가 아닙니다. 보고서의 비용은 **API 환산 비용**으로 표기합니다.
-- `.claude/agents/*.md`의 `model:`에는 별칭(sonnet 등) 대신 **전체 모델 ID**를 적어 재현성을 확보합니다. effort 지정 가능 여부는 세팅 시 확인하고, 가능하면 역할별 effort도 고정해 기록합니다.
+- `.claude/agents/*.md`의 `model:`에는 별칭(sonnet 등) 대신 **전체 모델 ID**를 적어 재현성을 확보합니다.
+- 역할별 effort도 에이전트 정의의 `effort:`로 고정합니다 (확정 2026-10-29).
+
+| 역할 | effort | 이유 |
+|---|---|---|
+| implementer, test-writer | high | 코드 작성의 정확도 |
+| tester, qa | medium | 절차적 실행과 판정 |
+| reviewer, security | high | 결함 탐지 |
+| doc-keeper | low | 기계적 작업 |
+| 메인 세션 | 세션 시작 시 지정, 실행마다 같은 값 | run.json에 기록 |
 - 배정은 F1~F3 동안 **고정**합니다. 모델 변경 실험(예: reviewer를 Sonnet으로 내렸을 때 루프 횟수 변화)은 F3 이후 별도 실행으로 둡니다.
 
 ---
@@ -148,13 +162,13 @@ Fable 5.1은 쓰지 않습니다. Opus 5.5 대비 단가가 2.5배이고, 이 �
 5. jsonl 원본은 실행 폴더의 `transcripts/`에 복사(재분석용, 비공개)
 
 ### B. Hooks 실시간 로깅 (보조)
-`.claude/settings.json`에 프로젝트 hooks 등록:
-- `PreToolUse` (matcher `Agent`): stdin JSON의 `tool_input.prompt / description / subagent_type` → `research/logs/dispatch.jsonl` 추가
-- `PostToolUse` (matcher `Agent`): `tool_response`(보고) 추가
-- `SubagentStart` / `SubagentStop`: agent id, 시각 기록 → 단계별 소요 시간
+`.claude/settings.json`에 프로젝트 hooks를 등록합니다. 내용은 `research/config/claude-settings.json`에 있으며, Claude Code 설정 파일이라 **사람이 직접 설치**합니다.
+- `log_agent_event.py`: `UserPromptSubmit`, `PreToolUse`/`PostToolUse`(matcher `Agent|SendMessage`), `SubagentStart`, `SubagentStop`의 입력 전체를 `research/logs/agent-events.jsonl`에 추가. `PostToolUse`의 Agent `tool_response`에는 usage와 소요 시간이 담김
+- `guard_write.py`: `PreToolUse`(matcher `Write|Edit|NotebookEdit`). 서브에이전트가 7.3절 쓰기 영역 밖에 쓰면 차단하고 기록
+- 같은 파일의 `permissions`에 테스트·린트·git 조회 명령을 허용하고 `git push`를 금지
 
 ### C. 한계 (연구 보고서에 명시)
-- 서브에이전트의 **시스템 프롬프트 원문**은 어디에도 기록되지 않습니다. 대신 "빈 작업(hello)" 서브에이전트를 역할별로 1회 돌려 **고정 오버헤드 토큰**을 베이스라인으로 측정합니다. 에이전트 .md 본문과 CLAUDE.md 원문은 레포에 있으므로 그 부분은 알 수 있습니다.
+- 서브에이전트의 **시스템 프롬프트**는 트랜스크립트의 `prompt_snapshot` 첨부에 기록됩니다 (세팅 중 확인, Claude Code 2.1.308). Claude Code 내장 프롬프트가 포함되고 세션 정보가 섞인 첨부도 있으므로 원문은 공개하지 않고, `collect.py`가 크기(글자 수)만 `agents.csv`에 남깁니다. 고정 오버헤드 토큰은 역할별 빈 작업 실행으로 따로 측정합니다.
 - CLAUDE.md는 모든 서브에이전트에 주입되므로 **짧게** 유지해야 합니다(토큰 비용 변수).
 
 ---
@@ -178,7 +192,7 @@ Fable 5.1은 쓰지 않습니다. Opus 5.5 대비 단가가 2.5배이고, 이 �
 ### 수정 루프 측정 항목
 - 루프 횟수, 실패 원인 분류별 건수(code_bug / test_bug / spec_ambiguous)
 - 루프 1회당 토큰: tester 보고 → 메인 라우팅 → 수정 에이전트 → tester 재실행 합계
-- **이어서 호출 vs 새로 호출 비교**: F1은 SendMessage로 이어서 호출, F2는 같은 상황을 새 에이전트로 호출해 cache_read 비중과 총 토큰 차이를 비교 (F3는 결과가 나은 쪽으로 고정)
+- **이어서 호출 vs 새로 호출**: 본 실험은 모두 이어서 호출(SendMessage)로 고정합니다. 새로 호출하는 방식과의 비교는 6.6절과 함께 선택 실험으로 둡니다.
 
 ### 리뷰 루프 측정 항목
 - 종료까지 걸린 라운드 수, 종료 사유(blocker/major 0건 / 5라운드 도달)
@@ -228,7 +242,7 @@ Fable 5.1은 쓰지 않습니다. Opus 5.5 대비 단가가 2.5배이고, 이 �
 | 루프 한도 초과 | 실패로 기록하고 종료 | 사람에게 넘김 |
 
 - 개입 시점은 H1~H4로 **고정**합니다. 그 외 시점에는 개입하지 않아야 반복 실행의 조건이 같아집니다.
-- 개입할 때마다 `human-log.md`에 시점, 소요 시간(분), 보낸 메시지 원문, 결정 내용을 기록합니다.
+- `human-log.md`는 `collect.py`가 트랜스크립트에서 자동 생성합니다. 사람 메시지마다 시각, 메인의 직전 응답부터 걸린 시간, 글자 수를 적습니다. 연구자는 H1~H4 구분과 결정 내용을 메모로 덧붙입니다.
 - 1절의 기본 파이프라인(계획 승인 1회)은 두 모드의 중간입니다. 예산이 허락하면 세 번째 모드로 추가합니다.
 - 모드 전환은 메인 세션 시작 명령으로 합니다 (예: `/run-feature F1 auto`). 모드별 규칙은 이 명령의 지침 파일에 적어 에이전트 정의와 분리합니다.
 
@@ -241,6 +255,7 @@ Fable 5.1은 쓰지 않습니다. Opus 5.5 대비 단가가 2.5배이고, 이 �
 | 같은 설정 | 모델 배정, 에이전트 정의, CLAUDE.md, 루프 한도를 모든 실행에서 동일하게 유지. 실행 시작 시 이 파일들의 해시를 기록 |
 | 반복 실행 | LLM 결과는 매번 다르므로 **모드별·기능별 2회**. 기능 3 × 모드 2 × 2회 = **총 12회** |
 | 실행 순서 | 자율 모드를 먼저 돌리고 결과를 열어보지 않음. 먼저 보면 개입 모드에서 사람의 판단이 달라지기 때문 |
+| 권한 모드 | 모든 실행을 같은 권한 모드로 시작. auto 모드에서 권한 확인 창이 뜨면 사람 개입이 되므로, 자율 모드는 확인 창이 뜨지 않는 모드로 실행하고 그 모드를 run.json에 기록 |
 | 연구 문서 격리 | 실행 worktree는 sparse-checkout으로 연구 문서와 다음 기능 설계서를 제외 (7.4절) |
 | 평가 테스트 격리 | 레포 밖에 보관. 실행 후 트랜스크립트에서 평가 폴더 경로 접근 흔적을 검색해, 접근한 실행은 무효 처리 |
 
@@ -325,7 +340,7 @@ L2는 **LLM이 LLM에게 쓰는 글**이라 가장 중요한 분석 대상입니
 | `annotations.csv` | 메시지별 코딩 결과 (6.4) |
 
 - 수집 범위: 최초 호출의 지시, **이어서 호출할 때 보낸 메시지(SendMessage)**, 보고, 사람 메시지(개입 모드).
-- 이어서 호출한 메시지가 트랜스크립트에 어떻게 남는지는 세팅 단계에서 확인합니다.
+- 기록 형식 (세팅 중 확인): 이어서 호출한 메시지는 서브에이전트 트랜스크립트에 `isMeta` user 레코드로 남고 "The coordinator sent a message while you were working:" 머리말이 붙습니다. 데스크톱 앱에서는 서브에이전트의 최종 보고가 `SubagentHandback` 도구 호출의 `message`로 전달됩니다. `collect.py`는 두 형식과 일반 텍스트 보고를 모두 처리합니다.
 - 메시지 종류와 코딩 기준은 `research/config/message-codebook.md`에 정의합니다.
 
 ### 6.4 분석 관점
@@ -387,7 +402,7 @@ agent-pipeline-lab/
 ├── .claude/
 │   ├── agents/                      [고정] 에이전트 정의 7종
 │   ├── skills/run-feature/          [고정] 오케스트레이션 지침, 자율/개입 모드 규칙
-│   └── settings.json                [고정] hook, 권한 설정
+│   └── settings.json                [고정] hook, 권한 설정 (내용: research/config/claude-settings.json, 사람이 설치)
 ├── docs/
 │   ├── features/F1.md …             [고정] 사람이 쓰는 설계서
 │   ├── plans/F1-plan.md …           [자유] 메인이 쓰는 계획과 결정 기록
@@ -420,7 +435,7 @@ agent-pipeline-lab/
 
 | 파일 | 계약 |
 |---|---|
-| `src/shortlink/main.py` | `create_app(settings: Settings \| None = None) -> FastAPI`. 모듈 수준 `app = create_app()` (uvicorn 실행용). 앱 생성 시 DB 스키마를 준비함 |
+| `src/shortlink/main.py` | `create_app(settings: Settings \| None = None) -> FastAPI`. 앱 생성 시 라우터 등록과 DB 스키마 준비까지 끝냄. import만으로 DB 파일이 생기지 않도록 모듈 수준 `app`은 두지 않고 `uvicorn shortlink.main:create_app --factory`로 실행 |
 | `src/shortlink/config.py` | `Settings`: `db_path`(환경 변수 `SHORTLINK_DB_PATH`), `base_url`(`SHORTLINK_BASE_URL`). F3에서 API 키 항목 추가 예정 |
 | `tests/conftest.py` | `client` 픽스처: 임시 DB 경로로 `create_app(Settings(...))`을 만들어 `TestClient` 제공 |
 
@@ -435,7 +450,7 @@ agent-pipeline-lab/
 | implementer | `src/shortlink/**`, `pyproject.toml`·`uv.lock`(의존성 추가) | 고정 파일은 확장만 |
 | test-writer | `tests/**` | `conftest.py`는 확장만 |
 | tester, reviewer, qa, security | 없음 (읽기 전용) | 실행 후 `git status`로 확인 |
-| doc-keeper | `README.md`, `CHANGELOG.md`, git commit | |
+| doc-keeper | `docs/service.md`, `CHANGELOG.md`, git commit | 루트 `README.md`는 연구 저장소 소개라 제외 |
 
 ### 7.4 실행 worktree 구성
 
@@ -451,15 +466,15 @@ agent-pipeline-lab/
 
 ---
 
-## 8. 결정 필요 항목
+## 8. 결정 기록
 
-1. **파이프라인 v2** (tester는 판정만, 테스트 수정 루프 최대 5회, 리뷰 반영 루프 최대 5라운드, 인터페이스 스켈레톤을 승인 대상에 포함, 사람 개입은 설계·승인 2회) 로 진행해도 되는지
-2. **대상 서비스 = ShortLink** (F1~F3 위 표) 로 진행해도 되는지
+1. ~~파이프라인 v2~~ → **승인** (2026-10-29): tester는 판정만, 테스트 수정 루프 최대 5회, 리뷰 반영 루프 최대 5라운드, 인터페이스 스켈레톤을 승인 대상에 포함, 사람 개입은 설계·승인 2회
+2. ~~대상 서비스~~ → **승인** (2026-10-29): ShortLink (F1~F3, 4절)
 3. ~~모델 배정~~ → **확정** (2026-10-29): 1절 "에이전트별 모델 배정" 표대로 (메인·reviewer·security는 Opus 5.5, implementer·test-writer·tester·qa는 Sonnet 5.5, doc-keeper는 Haiku 5.5)
 4. ~~사람 게이트 2~~ → v1.2에서 삭제 (사람 개입 최소화 목표에 따라 결정됨)
-5. **비교 실험** (5절): 자율 vs 개입 2개 모드, 기능별 2회 반복, 총 12회 실행으로 진행해도 되는지. 평가 테스트 검토는 사람이 맡음
+5. ~~비교 실험~~ → **승인** (2026-10-29): 자율 vs 개입 2개 모드, 기능별 2회 반복, 총 12회 실행 (5절). 평가 테스트 검토는 사람이 맡음
 6. ~~지시 프롬프트 자유도~~ → **확정** (2026-10-29): L2 지시는 자유, L3 보고는 형식 고정 (6.2절)
 7. 소통 프로토콜 비교 실험(6.6절)은 본 실험 결과를 본 뒤 실행 여부 결정
 8. ~~레포 구조~~ → **확정** (2026-10-29): 계약 부분만 고정, 나머지는 메인이 결정 (7절)
 
-승인되면 세팅 단계로 넘어갑니다: uv/git 초기화 → 에이전트 정의 7종 → hooks + collect.py + score.py → `/run-feature` 명령(모드 전환) → 고정 오버헤드 베이스라인 측정 → F1 설계서 템플릿 제공 → 평가 테스트 초안 작성.
+세팅(P1) 진행 상황은 [연구 계획서](01-research-plan.md)의 "현재 상태"와 연구 일지를 봅니다.

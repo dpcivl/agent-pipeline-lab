@@ -4,7 +4,7 @@
 |---|---|---|
 | `hooks/` | 에이전트 호출을 실시간 기록하는 Claude Code hook 스크립트 | 공개 |
 | `tools/` | 트랜스크립트 수집(`collect.py`), 채점(`score.py`), 비식별화 스크립트 | 공개 |
-| `config/` | 모델 단가표(`pricing.json`), 메시지 코드북(`message-codebook.md`) | 공개 |
+| `config/` | 모델 단가표(`pricing.json`), 메시지 코드북(`message-codebook.md`), Claude Code 설정 템플릿(`claude-settings.json`) | 공개 |
 | `logs/` | hook이 남기는 실시간 원본 로그 | **비공개** (.gitignore) |
 | `runs/` | 실행별 결과. `runs/F{n}/{auto\|human}/r{k}/` | 일부 공개 (아래 참고) |
 
@@ -21,7 +21,7 @@ runs/F1/auto/r1/
 ├── usage.csv          # 에이전트 실행별 토큰
 ├── edges.csv          # 통신 엣지별 토큰
 ├── score.json         # 평가 테스트·정적 지표·블라인드 평가 결과
-├── human-log.md       # 개입 모드에서 사람 개입 기록
+├── human-log.md       # 사람 개입 기록 (collect.py 자동 생성 + 연구자 메모)
 └── summary.md         # 실행 요약
 ```
 
