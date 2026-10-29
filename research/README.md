@@ -3,7 +3,7 @@
 | 폴더 | 내용 | git 공개 |
 |---|---|---|
 | `hooks/` | 에이전트 호출을 실시간 기록하는 Claude Code hook 스크립트 | 공개 |
-| `tools/` | 트랜스크립트 수집(`collect.py`), 채점(`score.py`), 비식별화 스크립트 | 공개 |
+| `tools/` | 실행 생성(`new_run.py`), 수집(`collect.py`), 비식별화(`sanitize.py`), 채점(`score.py`), main 반영(`promote.py`) | 공개 |
 | `config/` | 모델 단가표(`pricing.json`), 메시지 코드북(`message-codebook.md`), Claude Code 설정 템플릿(`claude-settings.json`) | 공개 |
 | `logs/` | hook이 남기는 실시간 원본 로그. `logs/events/`에 이벤트마다 파일 하나 | **비공개** (.gitignore) |
 | `runs/` | 실행별 결과. `runs/F{n}/{auto\|human}/r{k}/` | 일부 공개 (아래 참고) |
@@ -12,7 +12,9 @@
 
 ```
 runs/F1/auto/r1/
-├── session.txt        # 메인 세션 id, Claude Code 버전, 설정 파일 해시
+├── run.json           # new_run.py: 시작 커밋, 브랜치, Claude Code 버전, 설정 파일 해시
+├── checkpoints.csv    # 실행 브랜치의 커밋 목록, 쓰기 영역 밖 변경 표시
+├── promoted.json      # promote.py: main에 반영된 경우 커밋과 태그
 ├── transcripts/       # 원본 JSONL 사본 — 비공개 (.gitignore)
 ├── messages/          # 에이전트 간 메시지 원문, 메시지 한 개당 파일 하나 (비식별화 후) — 공개
 ├── messages.jsonl     # 위 메시지의 분석용 한 줄 형식
