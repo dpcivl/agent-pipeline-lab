@@ -13,8 +13,11 @@
 | 2 | F1 자율 2회차 | `F1-auto-r2` | `/run-feature F1 auto` |
 | 3 | F1 개입 1회차 | `F1-human-r1` | `/run-feature F1 human` |
 | 4 | F1 개입 2회차 | `F1-human-r2` | `/run-feature F1 human` |
-| 5 | F1 결과 선택과 main 반영 → `baseline-F2` | (연구 세션) | |
-| 6~9 | F2 자율 2회, 개입 2회 | 연구 세션이 준비 | |
+| 5 | F1 결과 선택과 main 반영 → `baseline-F2` (완료: human r1) | (연구 세션) | |
+| 6 | F2 자율 1회차 | `F2-auto-r1` | `/run-feature F2 auto` |
+| 7 | F2 자율 2회차 | `F2-auto-r2` | `/run-feature F2 auto` |
+| 8 | F2 개입 1회차 | `F2-human-r1` | `/run-feature F2 human` |
+| 9 | F2 개입 2회차 | `F2-human-r2` | `/run-feature F2 human` |
 | 10 | F2 결과 선택과 main 반영 → `baseline-F3` | (연구 세션) | |
 | 11~14 | F3 자율 2회, 개입 2회 | 연구 세션이 준비 | |
 

@@ -1,0 +1,9 @@
+{
+  "branch": "run/F1-human-r1",
+  "base_commit": "d1ad59fb2fbb517ea969656f50f7cca612e4d707",
+  "main_commit": "091cc63ae5495fbd103b60a86c75df0adbb4d6da",
+  "commits_on_branch": 4,
+  "checkpoints": 3,
+  "tag": "baseline-F2",
+  "promoted_at": "2026-10-29T06:49:40+00:00"
+}
