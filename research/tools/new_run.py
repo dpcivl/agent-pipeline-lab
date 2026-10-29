@@ -6,6 +6,7 @@ documents and other features' specs are left out so they cannot influence the ag
 
 Usage:
   uv run python research/tools/new_run.py F1 auto 1 [--base <commit-or-tag>]
+  uv run python research/tools/new_run.py P2 auto 1   (measurement stage, no feature spec)
 
 Modes: auto (no human), human (human at H1-H4), default (human approves the plan only).
 Writes research/runs/<feature>/<mode>/r<rep>/run.json with the base commit and config hashes.
@@ -98,7 +99,7 @@ def main() -> int:
     ap = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
-    ap.add_argument("feature", help="feature id, e.g. F1")
+    ap.add_argument("feature", help="feature id (F1, F2, ...) or measurement stage (P2)")
     ap.add_argument("mode", choices=MODES)
     ap.add_argument("rep", type=int, help="repetition number, e.g. 1")
     ap.add_argument("--base", default="HEAD", help="commit or tag to start from")
@@ -107,8 +108,9 @@ def main() -> int:
     ap.add_argument("--no-sync", action="store_true", help="skip uv sync in the worktree")
     args = ap.parse_args()
 
-    if not re.fullmatch(r"F\d+", args.feature):
-        sys.exit("feature must look like F1")
+    if not re.fullmatch(r"[FP]\d+", args.feature):
+        sys.exit("feature must look like F1 (feature) or P2 (measurement stage)")
+    measurement = args.feature.startswith("P")  # no feature spec needed
     name = f"{args.feature}-{args.mode}-r{args.rep}"
     branch = f"run/{name}"
     worktree = Path(args.runs_root) / name
@@ -124,7 +126,7 @@ def main() -> int:
         ).returncode
         == 0
     )
-    if not has_spec and not args.allow_missing_spec:
+    if not has_spec and not (measurement or args.allow_missing_spec):
         sys.exit(f"{spec} is not in the base commit {base[:8]}")
 
     worktree.parent.mkdir(parents=True, exist_ok=True)
