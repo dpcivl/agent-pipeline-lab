@@ -14,8 +14,21 @@ from __future__ import annotations
 import json
 import os
 import secrets
+import sys
 from datetime import UTC, datetime
 from pathlib import Path
+
+
+def read_payload() -> dict:
+    """Hook input from stdin. Claude Code sends UTF-8; on Windows Python would decode
+    stdin with the locale code page and corrupt Korean text and emoji, so read bytes."""
+    # Messages printed to stderr reach the agent; send them as UTF-8 as well.
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    raw = sys.stdin.buffer.read().decode("utf-8", errors="replace")
+    try:
+        return json.loads(raw or "{}")
+    except json.JSONDecodeError:
+        return {"unparsed": raw[:2000]}
 
 
 def events_dir(project: Path) -> Path:
@@ -30,8 +43,11 @@ def write_event(project: Path, payload: dict) -> Path:
     name = f"{now.strftime('%Y%m%dT%H%M%S%fZ')}-{os.getpid()}-{secrets.token_hex(3)}.json"
     path = folder / name
     tmp = path.with_suffix(".tmp")
-    tmp.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
-    tmp.replace(path)  # the event file appears complete or not at all
+    try:
+        tmp.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+        tmp.replace(path)  # the event file appears complete or not at all
+    finally:
+        tmp.unlink(missing_ok=True)
     return path
 
 

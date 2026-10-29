@@ -11,13 +11,12 @@ agent. Every block is also recorded under research/logs/events/.
 
 from __future__ import annotations
 
-import json
 import os
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from eventlog import write_event
+from eventlog import read_payload, write_event
 
 WRITE_AREAS = {
     "implementer": ("src/shortlink/", "pyproject.toml", "uv.lock"),
@@ -45,7 +44,7 @@ def log_block(project: Path, payload: dict, reason: str) -> None:
 
 
 def main() -> int:
-    payload = json.loads(sys.stdin.read() or "{}")
+    payload = read_payload()
     agent_type = payload.get("agent_type")
     if not agent_type:
         return 0

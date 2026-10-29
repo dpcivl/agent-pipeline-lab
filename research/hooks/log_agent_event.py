@@ -9,20 +9,16 @@ these events as a timing cross-check. The hook never blocks: it always exits 0.
 
 from __future__ import annotations
 
-import json
 import os
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from eventlog import write_event
+from eventlog import read_payload, write_event
 
 
 def main() -> None:
-    try:
-        payload = json.loads(sys.stdin.read() or "{}")
-    except json.JSONDecodeError:
-        payload = {"unparsed": True}
+    payload = read_payload()
     project = Path(os.environ.get("CLAUDE_PROJECT_DIR") or payload.get("cwd") or ".")
     write_event(project, payload)
 

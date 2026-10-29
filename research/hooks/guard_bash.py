@@ -12,14 +12,13 @@ recorded under research/logs/events/.
 
 from __future__ import annotations
 
-import json
 import os
 import re
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from eventlog import write_event
+from eventlog import read_payload, write_event
 
 # `git push`, also with options before the subcommand (git -C dir push, git -c k=v push).
 GIT_PUSH_RE = re.compile(r"(?:^|[;&|(\s])git(?:\s+-{1,2}\S+(?:\s+(?!push\b)\S+)?)*\s+push\b")
@@ -30,7 +29,7 @@ def is_run_worktree(project: Path) -> bool:
 
 
 def main() -> int:
-    payload = json.loads(sys.stdin.read() or "{}")
+    payload = read_payload()
     command = (payload.get("tool_input") or {}).get("command") or ""
     if not GIT_PUSH_RE.search(command):
         return 0

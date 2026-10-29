@@ -23,8 +23,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python \"$CLAUDE_PROJECT_DIR/research/hooks/log_agent_event.py\"",
-            "async": true
+            "command": "python \"$CLAUDE_PROJECT_DIR/research/hooks/log_agent_event.py\""
           }
         ]
       }
@@ -35,8 +34,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python \"$CLAUDE_PROJECT_DIR/research/hooks/log_agent_event.py\"",
-            "async": true
+            "command": "python \"$CLAUDE_PROJECT_DIR/research/hooks/log_agent_event.py\""
           }
         ]
       },
@@ -65,8 +63,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python \"$CLAUDE_PROJECT_DIR/research/hooks/log_agent_event.py\"",
-            "async": true
+            "command": "python \"$CLAUDE_PROJECT_DIR/research/hooks/log_agent_event.py\""
           }
         ]
       }
@@ -76,8 +73,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python \"$CLAUDE_PROJECT_DIR/research/hooks/log_agent_event.py\"",
-            "async": true
+            "command": "python \"$CLAUDE_PROJECT_DIR/research/hooks/log_agent_event.py\""
           }
         ]
       }
@@ -87,8 +83,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python \"$CLAUDE_PROJECT_DIR/research/hooks/log_agent_event.py\"",
-            "async": true
+            "command": "python \"$CLAUDE_PROJECT_DIR/research/hooks/log_agent_event.py\""
           }
         ]
       }
