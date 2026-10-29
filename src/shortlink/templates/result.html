@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}단축 URL을 만들었습니다 — ShortLink{% endblock %}
+{% block content %}
+    <h1>단축 URL을 만들었습니다</h1>
+    <p class="tagline">아래 링크를 복사해서 공유하세요.</p>
+    <p class="result-label">단축 URL</p>
+    <div class="short-url-row">
+      <a class="short-url" id="short-url" href="{{ short_url }}">{{ short_url }}</a>
+      <button type="button" class="copy-button" data-copy="{{ short_url }}">복사</button>
+    </div>
+    <p class="copy-status" id="copy-status" aria-live="polite"></p>
+    <p class="result-label">원래 URL</p>
+    <p class="original-url">{{ url }}</p>
+    <a class="back-link" href="/">다른 URL 줄이기</a>
+{% endblock %}
+{% block scripts %}
+<script src="/static/copy.js" defer></script>
+{% endblock %}

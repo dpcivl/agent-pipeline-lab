@@ -17,7 +17,11 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
+from shortlink import api, web
 from shortlink.config import Settings
+from shortlink.db import init_schema
+from shortlink.repository import LinkRepository
+from shortlink.security import add_security_headers
 
 PACKAGE_DIR = Path(__file__).resolve().parent
 TEMPLATES_DIR = PACKAGE_DIR / "templates"
@@ -28,6 +32,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     settings = settings or Settings.from_env()
     app = FastAPI(title="ShortLink")
     app.state.settings = settings
+    add_security_headers(app)
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
     # Feature code registers routers and prepares the database schema here.
+    init_schema(settings.db_path)
+    app.state.repository = LinkRepository(settings.db_path)
+    app.include_router(api.router)
+    # web.router has the catch-all GET /{code}, so it goes last.
+    app.include_router(web.router)
     return app

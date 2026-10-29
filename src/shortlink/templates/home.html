@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}{% if error %}입력 오류 — ShortLink{% else %}ShortLink — URL 줄이기{% endif %}{% endblock %}
+{% block content %}
+    <h1>URL 줄이기</h1>
+    <p class="tagline">긴 URL을 짧고 공유하기 쉬운 링크로 바꿔 드립니다.</p>
+    <form method="post" action="/">
+      {% if error %}<p class="error" id="url-error" role="alert">{{ error }}</p>
+      {% endif %}<label for="url">줄일 URL</label>
+      <div class="field-row">
+        <input type="text" id="url" name="url" value="{{ url_value }}" inputmode="url" autocomplete="off"
+               placeholder="https://example.com/very/long/path"{% if error %} aria-invalid="true" aria-describedby="url-error"{% endif %}>
+        <button type="submit">줄이기</button>
+      </div>
+    </form>
+{% endblock %}

@@ -7,7 +7,9 @@ FIXED CONTRACT (see docs/00-pipeline-design.md section 7.2):
 
 from __future__ import annotations
 
-from collections.abc import Iterator
+import sqlite3
+from collections.abc import Callable, Iterator
+from contextlib import closing
 
 import pytest
 from fastapi import FastAPI
@@ -32,3 +34,17 @@ def app(settings: Settings) -> FastAPI:
 def client(app: FastAPI) -> Iterator[TestClient]:
     with TestClient(app) as test_client:
         yield test_client
+
+
+@pytest.fixture
+def count_links(settings: Settings) -> Callable[[], int]:
+    """Return a function that counts rows in `links` by reading the SQLite file directly.
+
+    The connection is closed on every call (an open handle blocks tmp cleanup on Windows).
+    """
+
+    def _count() -> int:
+        with closing(sqlite3.connect(settings.db_path)) as conn:
+            return conn.execute("SELECT COUNT(*) FROM links").fetchone()[0]
+
+    return _count
