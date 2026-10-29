@@ -1,0 +1,33 @@
+{
+  "name": "F1-default-r2",
+  "feature": "F1",
+  "mode": "default",
+  "rep": 2,
+  "base_commit": "2a793e9ddb3289f9a973959858b14ffa5b67763b",
+  "branch": "run/F1-default-r2",
+  "worktree": "F1-default-r2",
+  "created_at": "2026-10-29T02:06:08+00:00",
+  "claude_code_version": "2.1.308 (Claude Code)",
+  "config_hashes": {
+    ".claude/agents/doc-keeper.md": "1a1d191cf3ade7fe66ed141ca16435149db8c8109c72b314fe038f86e6f35a5c",
+    ".claude/agents/implementer.md": "e4965abb15d5f8918e1931a532e0409208a06bab517a50ecccd081b7a985e896",
+    ".claude/agents/qa.md": "b55e07519eda5df7f813b2456b946a4728d9fd01f0bc6b5129dc472987b96b08",
+    ".claude/agents/reviewer.md": "28810c4125b36473ef0ce6b73689f9aba04ca261d64f234454f1be691ced9097",
+    ".claude/agents/security.md": "88fe39a73dc5063f6770e773876d1b06c2c7ee5cb5bb1e8de002a21c9ca3c122",
+    ".claude/agents/test-writer.md": "0bf05ceea19043ead66d5d71900cda3669b07b63097e7e98e3e9eb5307492e56",
+    ".claude/agents/tester.md": "3504f1bb1e423f192632860fc6912692db4fa78a4b9ead414871cb37e38ff8e5",
+    ".claude/settings.json": "18a000015a971209bd3c53e004b4e14205ed4eaab3e18d0dcdda09351aa27f34",
+    ".claude/skills/measure-baseline/SKILL.md": "d32a7c6c7fcce45132b3c174152d2c791f90fd7d94ecd538e74da59e8d6791b3",
+    ".claude/skills/run-feature/SKILL.md": "61ec2672bf31d868c33d31e231a814fe6df8e552a8950ded447a7cdf38a5f412",
+    "CLAUDE.md": "2e364ebbf5aea2b609cb1d7be4121750f19b7c72efbb5c31e94d6324d62e49a9",
+    "pyproject.toml": "278fde1352988c6740d5e20856b28bf7660453664bf14cd91e411f7626b6f5d1",
+    "research/hooks/eventlog.py": "96f057e82ec3cb3ccf94ae1d846d0aeeba9218483614b113d160c0594ceda8a5",
+    "research/hooks/guard_bash.py": "2fd2364cc8653c3b49b535d691ff64b2d9df06090e3a60bcc97fec12d98d8aa4",
+    "research/hooks/guard_write.py": "927fd7b029902e887d1e055fbe160cdfd49542a97fb6804c60bbf65a6763347e",
+    "research/hooks/log_agent_event.py": "4bf3b4c20ed6a423cdcc6857e30442153c190464b38640c9ae7a4fefcfb421f3",
+    "src/shortlink/config.py": "2c96860fa52888c1ea3a6e4b838b6f577ed19b5020e4d8d2ac34d17fe4357a8d",
+    "src/shortlink/main.py": "64e51d51529d6e675a34720b7a21d1f83a2baa38f3d592cae73476754ddae635",
+    "tests/conftest.py": "be59481526e70922d48a032c646c895eec26db20a775d2cbc2abf4422c71a0f9",
+    "uv.lock": "b7da9e30ed66f50614b8453255f08c79771bba44dde1a5bab7d70ecf33249307"
+  }
+}
