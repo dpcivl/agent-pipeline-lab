@@ -25,7 +25,9 @@ REPO = Path(__file__).resolve().parents[2]
 
 
 def git(*args: str, check: bool = True) -> str:
-    result = subprocess.run(["git", *args], cwd=REPO, capture_output=True, text=True, check=False)
+    result = subprocess.run(
+        ["git", *args], cwd=REPO, capture_output=True, text=True, encoding="utf-8", check=False
+    )
     if check and result.returncode != 0:
         sys.exit(f"git {' '.join(args)} failed:\n{result.stderr.strip()}")
     return result.stdout.strip()
@@ -73,7 +75,12 @@ def main() -> int:
     checkpoints = sum(1 for s in subjects if s.startswith("wip("))
 
     merge = subprocess.run(
-        ["git", "merge", "--squash", branch], cwd=REPO, capture_output=True, text=True, check=False
+        ["git", "merge", "--squash", branch],
+        cwd=REPO,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        check=False,
     )
     if merge.returncode != 0:
         subprocess.run(["git", "reset", "--merge"], cwd=REPO, check=False)
@@ -100,6 +107,7 @@ def main() -> int:
         cwd=REPO,
         input=message,
         text=True,
+        encoding="utf-8",
         capture_output=True,
         check=False,
     )

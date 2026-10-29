@@ -40,7 +40,9 @@ CONFIG_PATHS = (
 
 
 def git(*args: str, cwd: Path = REPO) -> str:
-    result = subprocess.run(["git", *args], check=False, cwd=cwd, capture_output=True, text=True)
+    result = subprocess.run(
+        ["git", *args], check=False, cwd=cwd, capture_output=True, text=True, encoding="utf-8"
+    )
     if result.returncode != 0:
         sys.exit(f"git {' '.join(args)} failed:\n{result.stderr.strip()}")
     return result.stdout.strip()
@@ -86,7 +88,9 @@ def claude_version() -> str:
         exe = str(candidates[-1]) if candidates else None
     if not exe:
         return "unknown"
-    out = subprocess.run([exe, "--version"], check=False, capture_output=True, text=True)
+    out = subprocess.run(
+        [exe, "--version"], check=False, capture_output=True, text=True, encoding="utf-8"
+    )
     return out.stdout.strip() or "unknown"
 
 
