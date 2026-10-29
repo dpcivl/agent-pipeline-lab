@@ -21,6 +21,15 @@ SECRET_RE = re.compile(
 )
 # Placeholder e-mail addresses that are safe to keep.
 SAFE_EMAILS = {"noreply@anthropic.com"}
+# Domains reserved for documentation and testing (RFC 2606, RFC 6761); never personal.
+RESERVED_DOMAIN_RE = re.compile(
+    r"@(?:[A-Za-z0-9-]+\.)*(?:example\.(?:com|net|org)|example|test|invalid|localhost)$",
+    re.IGNORECASE,
+)
+
+
+def _is_safe_email(email: str) -> bool:
+    return email in SAFE_EMAILS or bool(RESERVED_DOMAIN_RE.search(email))
 
 
 @lru_cache(maxsize=1)
@@ -68,7 +77,7 @@ def sanitize(text: str) -> str:
         text = pattern.sub("<HOME>", text)
     for email in _git_emails():
         text = text.replace(email, "<EMAIL>")
-    text = EMAIL_RE.sub(lambda m: m.group(0) if m.group(0) in SAFE_EMAILS else "<EMAIL>", text)
+    text = EMAIL_RE.sub(lambda m: m.group(0) if _is_safe_email(m.group(0)) else "<EMAIL>", text)
     text = SECRET_RE.sub("<SECRET>", text)
     for name in _user_names():
         # Remaining standalone occurrences such as project slugs (C--Users-name-...).
@@ -83,7 +92,7 @@ def find_leaks(text: str) -> list[str]:
         if re.search(rf"(?<![A-Za-z0-9]){re.escape(name)}(?![A-Za-z0-9])", text):
             leaks.append(f"user name: {name}")
     for email in EMAIL_RE.findall(text):
-        if email not in SAFE_EMAILS:
+        if not _is_safe_email(email):
             leaks.append(f"email: {email}")
     if SECRET_RE.search(text):
         leaks.append("secret-like token")
