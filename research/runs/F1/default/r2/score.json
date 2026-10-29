@@ -1,0 +1,32 @@
+{
+  "eval": null,
+  "own_tests": {
+    "tests": 224,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "passed": 224,
+    "failed_ids": [],
+    "pass_rate": 1.0,
+    "exit_code": 0,
+    "coverage_percent": 96.68
+  },
+  "ruff": {
+    "count": 0,
+    "by_rule": {}
+  },
+  "radon": {
+    "blocks": 32,
+    "average": 1.97,
+    "max": 10
+  },
+  "bandit": {
+    "count": 0,
+    "by_severity": {},
+    "tests": []
+  },
+  "size": {
+    "src_lines": 429,
+    "test_lines": 1634
+  }
+}

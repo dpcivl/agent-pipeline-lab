@@ -118,7 +118,7 @@ def ruff(worktree: Path) -> dict:
 
 
 def radon(worktree: Path) -> dict:
-    proc = run(["uv", "run", "--frozen", "radon", "cc", "src", "-j"], worktree)
+    proc = run(["uv", "run", "--frozen", "python", "-m", "radon", "cc", "src", "-j"], worktree)
     try:
         data = json.loads(proc.stdout or "{}")
     except json.JSONDecodeError:
@@ -136,7 +136,10 @@ def radon(worktree: Path) -> dict:
 
 
 def bandit(worktree: Path) -> dict:
-    proc = run(["uv", "run", "--frozen", "bandit", "-r", "src", "-f", "json", "-q"], worktree)
+    proc = run(
+        ["uv", "run", "--frozen", "python", "-m", "bandit", "-r", "src", "-f", "json", "-q"],
+        worktree,
+    )
     try:
         data = json.loads(proc.stdout or "{}")
     except json.JSONDecodeError:
