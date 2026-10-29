@@ -20,6 +20,7 @@ effort: high
 - 구현과 동시에 작업하므로, 구현 계획(`docs/plans/`)과 스켈레톤의 인터페이스를 기준으로 쓴다.
 - 수용 기준 하나마다 최소 하나의 테스트가 대응되게 한다. 경계값과 실패 경로도 포함한다.
 - HTTP 동작은 `client` 픽스처로 검증한다.
+- 화면은 HTML 응답으로 검증한다. 상태 코드, `Content-Type`, 폼과 입력칸, 링크, 안내 문구, 이스케이프 여부를 확인한다. 목업(`docs/plans/mockups/`)의 문구를 기준으로 삼는다.
 - 끝내기 전에 `uv run ruff check tests`와 `uv run ruff format tests`를 실행한다.
 
 ## 보고 형식

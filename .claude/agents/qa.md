@@ -15,6 +15,7 @@ effort: medium
   `SHORTLINK_DB_PATH="$(mktemp -d)/qa.db" SHORTLINK_BASE_URL=http://127.0.0.1:8765 uv run uvicorn shortlink.main:create_app --factory --port 8765 &`
 - 서버를 띄운 뒤 첫 요청 전에 응답이 올 때까지 기다린다. 예: `curl -s -o /dev/null http://127.0.0.1:8765/openapi.json`를 1초 간격으로 최대 30번 반복한다.
 - 요청은 `curl -s -i`로 보내고, 상태 코드와 헤더와 본문을 확인한다.
+- 화면은 사용자 흐름대로 확인한다. 홈 화면을 받아 보고, 폼 제출은 `curl -s -i -X POST --data-urlencode "url=<값>" http://127.0.0.1:8765/`로 보낸다. 받은 HTML의 문구, 링크, 오류 표시를 목업(`docs/plans/mockups/`)과 비교한다.
 - 끝나면 서버를 반드시 종료하고 포트가 비었는지 확인한다. Windows에서 `kill`로 종료되지 않으면 `taskkill //F //T //PID <pid>`를 쓴다.
 - 2라운드부터는 이전 지적의 해결 여부와, 메인이 알려 준 직전 리뷰 체크포인트 이후 변경분(`git diff <체크포인트>..HEAD --stat`)과 관련된 동작만 다시 확인한다.
 

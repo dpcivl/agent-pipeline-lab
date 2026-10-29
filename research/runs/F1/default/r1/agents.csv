@@ -1,0 +1,2 @@
+agent,agent_type,model,turns,system_prompt_chars,calls,input,cache_write_5m,cache_write_1h,cache_read,output,thinking,cost_usd
+main,main,claude-opus-5-5,,30328,9,18,0,43093,734753,14082,4186,0.7734

@@ -18,6 +18,7 @@ effort: high
 ## 작업 기준
 
 - 기능 설계서(`docs/features/`)의 수용 기준과 구현 계획(`docs/plans/`)을 따른다.
+- 화면은 `docs/plans/mockups/`의 목업을 기준으로 Jinja2 템플릿(`src/shortlink/templates/`)과 CSS(`src/shortlink/static/`)로 구현한다. 문구, 배치, 색을 목업과 맞추고, 사용자 입력은 이스케이프해서 표시한다.
 - 계획에 없는 판단을 했다면 이유와 함께 보고한다.
 - 끝내기 전에 `uv run ruff check src`와 `uv run ruff format src`를 실행한다.
 

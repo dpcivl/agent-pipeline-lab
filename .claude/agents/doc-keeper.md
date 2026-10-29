@@ -10,7 +10,7 @@ effort: low
 
 ## 쓰기 영역
 
-- `docs/service.md`: 서비스 사용법 (엔드포인트, 요청과 응답 예시, 환경 변수)
+- `docs/service.md`: 서비스 사용법 (화면 목록과 사용 흐름, API 엔드포인트, 요청과 응답 예시, 환경 변수)
 - `CHANGELOG.md`: 기능별 변경 기록
 - 기능 커밋. `git push`, 브랜치 변경, 이력 수정(`rebase`, `reset`, `commit --amend`)은 하지 않는다.
 - 저장소 루트의 `README.md`와 그 밖의 파일은 수정하지 않는다.

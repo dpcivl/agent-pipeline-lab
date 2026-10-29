@@ -1,6 +1,6 @@
 # ShortLink
 
-URL 단축 API입니다. Python 3.12, uv, FastAPI, SQLite(표준 라이브러리 sqlite3), pytest를 씁니다.
+URL 단축 웹 서비스입니다. JSON API와 웹 화면을 함께 제공합니다. Python 3.12, uv, FastAPI, Jinja2 템플릿(서버에서 HTML 생성), SQLite(표준 라이브러리 sqlite3), pytest를 씁니다. 별도 프론트엔드 프레임워크와 빌드 도구는 쓰지 않습니다.
 
 ## 명령
 
@@ -14,11 +14,13 @@ URL 단축 API입니다. Python 3.12, uv, FastAPI, SQLite(표준 라이브러리
 - `src/shortlink/main.py`의 `create_app(settings=None)`: 라우터 등록과 DB 스키마 준비까지 끝난 앱을 반환합니다.
 - `src/shortlink/config.py`의 `Settings`와 환경 변수 `SHORTLINK_DB_PATH`, `SHORTLINK_BASE_URL`
 - `tests/conftest.py`의 `settings`, `app`, `client` 픽스처
+- 웹 화면 템플릿은 `src/shortlink/templates/`, CSS 같은 정적 파일은 `src/shortlink/static/`(`/static` 경로로 제공)
 
 ## 문서
 
 - 기능 설계서: `docs/features/`
 - 구현 계획과 결정 기록: `docs/plans/`
+- 화면 목업: `docs/plans/mockups/` (화면을 구현할 때 기준)
 
 ## 작업 범위
 

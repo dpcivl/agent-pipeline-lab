@@ -11,6 +11,7 @@
 - v1.5 (2026-10-29): 모델 배정 확정. 사람 개입 vs 자율 비교 실험 설계 추가 (5절)
 - v1.6 (2026-10-29): 연구 계획서(01-research-plan.md)와 연구 일지 폴더를 레포 구조에 반영
 - v1.7 (2026-10-29): 에이전트 간 소통 분석 축 추가 (6절). L2 지시 프롬프트는 자유, L3 보고는 형식 고정으로 확정. 메시지 단위 수집 구조로 변경
+- v1.16 (2026-10-29): 대상 서비스를 **웹 화면이 있는 웹 서비스**로 확장(연구자 결정). FastAPI + Jinja2 서버 렌더링. 1단계에 화면 목업 제작과 사람의 목업 확인(H1) 추가. 고정 계약에 템플릿·정적 파일 위치 추가. 에이전트 정의를 화면 작업에 맞게 수정
 - v1.15 (2026-10-29): P2 측정 완료(2회). hook이 입력을 UTF-8로 읽도록 수정하고 기록 hook을 동기 실행으로 변경. 두 스킬이 시작 시 실행 위치를 확인
 - v1.14 (2026-10-29): P2 고정 오버헤드 측정 절차 추가 (`/measure-baseline` 스킬, 3절)
 - v1.13 (2026-10-29): 형상 관리 확정 (7.5절). 실행 브랜치에 체크포인트 커밋, 기능 커밋은 doc-keeper가 보고서까지 담아 하나로, main에는 `promote.py`로 기능마다 squash 커밋 하나와 `baseline-F<n+1>` 태그. 보고서 단계를 doc-keeper 앞으로 이동
@@ -73,8 +74,8 @@
 ```
 0. 프로젝트 세팅 (최초 1회) ─ uv, git, .claude/agents 7종, hooks, 수집 스크립트, CLAUDE.md
 1. 기능 설계서 (사람)            → docs/features/F{n}.md  (요구사항 + 수용 기준)
-2. 구현 계획 + 인터페이스 스켈레톤 (메인) → docs/plans/F{n}-plan.md + src/tests 스텁 (7.2절 고정 계약 안에서 자유 영역 구조 결정)
-3. 계획 검토·승인 (사람)                          ◆ 사람 게이트 1
+2. 구현 계획 + 인터페이스 스켈레톤 + **화면 목업** (메인) → docs/plans/F{n}-plan.md + src/tests 스텁 + docs/plans/mockups/ (브라우저로 바로 여는 HTML) (7.2절 고정 계약 안에서 자유 영역 구조 결정)
+3. 계획·목업 검토와 승인 (사람)                   ◆ 사람 게이트 1
 4. [병렬] implementer (S1, src/)  ∥  test-writer (S2, tests/)
 5. 테스트 루프                                              ◆ green 게이트
    5a. tester (S3, 읽기 전용): pytest 실행 → 실패마다 원인 분류해 보고
@@ -226,17 +227,19 @@ Fable 5.1은 쓰지 않습니다. Opus 5.5 대비 단가가 2.5배이고, 이 �
 
 ---
 
-## 4. 대상 서비스 제안: **ShortLink — URL 단축 API**
+## 4. 대상 서비스: **ShortLink — URL 단축 웹 서비스**
 
-스택: Python 3.12 + uv, FastAPI, SQLite(표준 `sqlite3`), pytest + httpx.
+스택: Python 3.12 + uv, FastAPI, Jinja2 템플릿(서버에서 HTML 생성), SQLite(표준 `sqlite3`), pytest + httpx2. 별도 프론트엔드 프레임워크와 빌드 도구는 쓰지 않습니다.
+
+> v1.16 변경: 처음에는 API만 만드는 서비스였으나, 연구자의 관심이 "웹·앱 개발 프로젝트에 에이전트 파이프라인을 적용할 수 있는가"이므로 웹 화면을 추가했습니다. 서버 렌더링을 고른 이유는 언어 하나, 빌드 도구 없이 웹 화면을 만들 수 있어 실행 간 편차와 비용을 줄일 수 있기 때문입니다. React 같은 프론트엔드 프레임워크는 이후 비교 대상으로 남깁니다.
 
 선택 이유: 도메인이 널리 알려져 있어 에이전트가 도메인 이해에 토큰을 쓰지 않고(파이프라인 오버헤드만 분리 측정), 기능마다 수용 기준이 명확하며, F2·F3가 F1 코드를 **수정**하므로 신규 작성뿐 아니라 변경 작업의 비용도 측정됩니다. 입력 검증·인증·만료가 있어 보안/QA 에이전트가 실질적으로 할 일이 있습니다.
 
 | 기능 | 내용 | 규모 | 측정 포인트 |
 |---|---|---|---|
-| **F1 단축·리다이렉트** | `POST /links {url}` → `{code, short_url}`; `GET /{code}` → 302. http/https만 허용, 코드 충돌 처리, SQLite 저장 | 소 | 그린필드 기준선 |
-| **F2 통계·커스텀 별칭** | 클릭 카운트, `GET /links/{code}/stats`(clicks, created_at, last_accessed), 생성 시 `alias` 옵션(유일성·예약어 검사) | 중 | 기존 코드 수정 비용 |
-| **F3 인증·만료·삭제** | `X-API-Key` 인증(생성/삭제), `expires_at` → 만료 시 410, `DELETE /links/{code}`, 단순 rate limit | 대 | 보안 에이전트 findings, 수정 루프 비용 |
+| **F1 단축·리다이렉트** | 웹 화면(홈, 결과, 입력 오류, 찾을 수 없음)과 API `POST /links`; `GET /{code}` → 302. http/https만 허용, 코드 충돌 처리, SQLite 저장 | 소 | 그린필드 기준선, 목업 확인 단계 |
+| **F2 통계·커스텀 별칭** | 클릭 카운트와 통계 화면·API, 생성 화면과 API에 `alias` 옵션(유일성·예약어 검사) | 중 | 기존 코드와 화면 수정 비용 |
+| **F3 인증·만료·삭제** | API 키 인증, 만료(만료 시 410), 삭제, 단순 rate limit, 키를 입력해 내 링크를 관리하는 화면 | 대 | 보안 에이전트 findings, 수정 루프 비용 |
 
 대안(비추천): CLI 가계부 — 구현은 쉽지만 QA/보안 단계가 할 일이 거의 없어 파이프라인 후반부 측정이 빈약해집니다.
 
@@ -413,6 +416,7 @@ agent-pipeline-lab/
 │   ├── __init__.py                  [고정]
 │   ├── main.py                      [고정] create_app() — 앱 진입점
 │   ├── config.py                    [고정] Settings — 환경 변수 기반 설정
+│   ├── templates/, static/          [자유] 화면 템플릿과 CSS (위치는 고정)
 │   └── (나머지)                      [자유] 예: api/, services/, db.py, schemas.py
 ├── tests/
 │   ├── conftest.py                  [고정] 임시 DB와 테스트 클라이언트 픽스처
@@ -424,6 +428,7 @@ agent-pipeline-lab/
 ├── docs/
 │   ├── features/F1.md …             [고정] 사람이 쓰는 설계서
 │   ├── plans/F1-plan.md …           [자유] 메인이 쓰는 계획과 결정 기록
+│   │   └── mockups/                 [자유] 메인이 만드는 화면 목업 (HTML)
 │   ├── 00-pipeline-design.md        [연구] 이 문서
 │   ├── 01-research-plan.md          [연구] 연구 계획서
 │   ├── insights/                    [연구] 프롬프트 패턴 카드, 좋은/나쁜 예시
@@ -453,7 +458,7 @@ agent-pipeline-lab/
 
 | 파일 | 계약 |
 |---|---|
-| `src/shortlink/main.py` | `create_app(settings: Settings \| None = None) -> FastAPI`. 앱 생성 시 라우터 등록과 DB 스키마 준비까지 끝냄. import만으로 DB 파일이 생기지 않도록 모듈 수준 `app`은 두지 않고 `uvicorn shortlink.main:create_app --factory`로 실행 |
+| `src/shortlink/main.py` | `create_app(settings: Settings \| None = None) -> FastAPI`. 앱 생성 시 라우터 등록과 DB 스키마 준비까지 끝냄. `/static` 경로에 `src/shortlink/static/`을 연결. 템플릿은 `src/shortlink/templates/`. import만으로 DB 파일이 생기지 않도록 모듈 수준 `app`은 두지 않고 `uvicorn shortlink.main:create_app --factory`로 실행 |
 | `src/shortlink/config.py` | `Settings`: `db_path`(환경 변수 `SHORTLINK_DB_PATH`), `base_url`(`SHORTLINK_BASE_URL`). F3에서 API 키 항목 추가 예정 |
 | `tests/conftest.py` | `client` 픽스처: 임시 DB 경로로 `create_app(Settings(...))`을 만들어 `TestClient` 제공 |
 
