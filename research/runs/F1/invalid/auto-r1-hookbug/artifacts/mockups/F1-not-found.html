@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>링크를 찾을 수 없음 — ShortLink</title>
+<style>
+/* ShortLink 공통 스타일 — 구현 시 src/shortlink/static/style.css로 그대로 옮긴다 */
+:root {
+  --color-bg: #f3f4f6;
+  --color-surface: #ffffff;
+  --color-text: #1f2937;
+  --color-muted: #6b7280;
+  --color-border: #d1d5db;
+  --color-primary: #2563eb;
+  --color-primary-hover: #1d4ed8;
+  --color-success-bg: #ecfdf5;
+  --color-success-border: #a7f3d0;
+  --color-success-text: #047857;
+  --color-error-bg: #fef2f2;
+  --color-error-border: #fecaca;
+  --color-error-text: #b91c1c;
+  --radius: 8px;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: system-ui, -apple-system, "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+}
+a { color: var(--color-primary); }
+a:hover { color: var(--color-primary-hover); }
+.site-header { background: var(--color-surface); border-bottom: 1px solid var(--color-border); }
+.site-header .inner, .container { max-width: 560px; margin: 0 auto; padding: 0 16px; }
+.site-header .inner { padding-top: 12px; padding-bottom: 12px; }
+.brand { font-size: 1.25rem; font-weight: 700; color: var(--color-text); text-decoration: none; }
+.container { padding-top: 32px; padding-bottom: 48px; }
+.card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius); padding: 24px; }
+h1 { font-size: 1.5rem; line-height: 1.3; margin: 0 0 8px; }
+.lead { color: var(--color-muted); margin: 0 0 24px; }
+.form-label { display: block; font-weight: 600; margin-bottom: 6px; }
+.form-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.form-input {
+  flex: 1 1 240px; min-width: 0; padding: 10px 12px;
+  font: inherit; color: inherit; background: var(--color-surface);
+  border: 1px solid var(--color-border); border-radius: var(--radius);
+}
+.form-input:focus { outline: 2px solid var(--color-primary); outline-offset: 1px; border-color: var(--color-primary); }
+.form-input[aria-invalid="true"] { border-color: var(--color-error-text); }
+.button {
+  flex: 0 0 auto; padding: 10px 20px; font: inherit; font-weight: 600; cursor: pointer;
+  color: #ffffff; background: var(--color-primary);
+  border: 1px solid var(--color-primary); border-radius: var(--radius);
+}
+.button:hover { background: var(--color-primary-hover); border-color: var(--color-primary-hover); }
+.button-secondary { color: var(--color-primary); background: var(--color-surface); }
+.button-secondary:hover { color: var(--color-primary-hover); background: var(--color-bg); }
+.alert { padding: 12px 16px; border: 1px solid; border-radius: var(--radius); margin: 0 0 16px; }
+.alert-error { background: var(--color-error-bg); border-color: var(--color-error-border); color: var(--color-error-text); }
+.alert-success { background: var(--color-success-bg); border-color: var(--color-success-border); color: var(--color-success-text); }
+.result-label { font-size: 0.875rem; font-weight: 600; color: var(--color-muted); margin: 0 0 4px; }
+.short-url-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 0 0 20px; }
+.short-url { font-size: 1.125rem; font-weight: 600; overflow-wrap: anywhere; }
+.original-url { margin: 0 0 24px; overflow-wrap: anywhere; word-break: break-all; }
+.actions { margin: 0; }
+/* 목업 전용: 구현에는 옮기지 않는다 */
+.mockup-note { max-width: 560px; margin: 16px auto 0; padding: 8px 16px; font-size: 0.8125rem; color: #92400e; background: #fffbeb; border: 1px dashed #f59e0b; border-radius: 8px; }
+</style>
+</head>
+<body>
+<header class="site-header">
+  <div class="inner"><a class="brand" href="/">ShortLink</a></div>
+</header>
+<main class="container">
+  <section class="card">
+    <h1>링크를 찾을 수 없습니다</h1>
+    <p class="lead">주소가 정확한지 확인해 주세요. 없는 링크이거나 잘못 입력된 주소일 수 있습니다.</p>
+    <p class="actions"><a href="/">홈으로 가기</a></p>
+  </section>
+</main>
+<p class="mockup-note">목업: 찾을 수 없음 (없는 코드로 GET /{code}, 404).</p>
+</body>
+</html>
