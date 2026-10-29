@@ -22,6 +22,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from collect import RUN_WRITE_AREAS
 
 
 def git(*args: str, check: bool = True) -> str:
@@ -46,6 +48,11 @@ def main() -> int:
         "--allow-unfinished",
         action="store_true",
         help="promote a run whose last commit is not a feature commit",
+    )
+    ap.add_argument(
+        "--allow-outside",
+        action="store_true",
+        help="promote even if the run changed files outside its write areas",
     )
     args = ap.parse_args()
 
@@ -73,6 +80,18 @@ def main() -> int:
     if not final_subject.startswith(f"{args.feature}:") and not args.allow_unfinished:
         sys.exit(f"last commit of {branch} is not a feature commit: {final_subject!r}")
     checkpoints = sum(1 for s in subjects if s.startswith("wip("))
+    changed = git("diff", "--name-only", f"{base}..{branch}").splitlines()
+    outside = [
+        p
+        for p in changed
+        if not any(p == a or (a.endswith("/") and p.startswith(a)) for a in RUN_WRITE_AREAS)
+    ]
+    if outside and not args.allow_outside:
+        sys.exit(
+            f"{branch} changed files outside the run write areas:\n  "
+            + "\n  ".join(outside)
+            + "\nReview them; rerun with --allow-outside to promote anyway."
+        )
 
     merge = subprocess.run(
         ["git", "merge", "--squash", branch],

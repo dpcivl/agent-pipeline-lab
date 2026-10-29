@@ -36,7 +36,8 @@ disable-model-invocation: true
 
 - 이 실행은 전용 브랜치에서 진행한다. 브랜치를 바꾸거나 다른 브랜치를 병합하지 않는다. `git push`는 하지 않는다.
 - 아래 절차에서 **[체크포인트]** 표시가 있는 시점마다 네가 직접 체크포인트 커밋을 만든다.
-  - 명령: `git add -A && git commit -m "wip($feature): <단계 번호> <무엇을 했는지>"`
+  - 명령: `git add -A --sparse && git commit -m "wip($feature): <단계 번호> <무엇을 했는지>"`
+  - 이 작업 폴더는 일부 파일만 꺼낸 sparse 상태라서 `--sparse`가 없으면 `git add`가 실패할 수 있다.
   - 예: `wip($feature): 3 테스트 루프 2회차 수정`
   - 바뀐 파일이 없으면 커밋하지 않는다.
 - 커밋 해시를 기억해 두었다가, 리뷰 2라운드부터 reviewer, qa, security에게 "직전 리뷰 체크포인트" 해시를 알려 준다. 그러면 그 이후 변경분만 확인할 수 있다.
