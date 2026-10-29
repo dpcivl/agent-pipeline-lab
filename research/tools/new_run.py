@@ -116,7 +116,7 @@ def main() -> int:
     spec = f"docs/features/{args.feature}.md"
     has_spec = (
         subprocess.run(
-            ["git", "cat-file", "-e", f"{base}:{spec}"], check=False, cwd=REPO
+            ["git", "cat-file", "-e", f"{base}:{spec}"], check=False, cwd=REPO, capture_output=True
         ).returncode
         == 0
     )
