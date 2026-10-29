@@ -65,7 +65,7 @@ def eval_tests(worktree: Path, eval_dirs: list[Path], tmp: Path) -> dict:
     proc = run(
         [
             "uv", "run", "--frozen", "pytest", str(target), "-q", "-p", "no:cacheprovider",
-            "--import-mode=importlib", "--rootdir", str(target), f"--junitxml={junit}",
+            "--rootdir", str(target), f"--junitxml={junit}",
         ],
         worktree,
     )  # fmt: skip
