@@ -156,7 +156,8 @@ def main() -> int:
     print(f"branch:   {branch} (from {base[:8]})")
     print(f"record:   {run_dir / 'run.json'}")
     print("next:")
-    print(f"  1. open Claude Code in {worktree} and run: /run-feature {args.feature} {args.mode}")
+    command = "/measure-baseline" if measurement else f"/run-feature {args.feature} {args.mode}"
+    print(f"  1. open Claude Code in {worktree} (auto permission mode) and run: {command}")
     print(f"  2. uv run python research/tools/collect.py --worktree {worktree} --out {run_dir}")
     return 0
 
