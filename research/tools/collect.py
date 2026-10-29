@@ -203,17 +203,54 @@ def seconds_between(start: str, end: str) -> float | None:
     return round((b - a).total_seconds(), 1)
 
 
+# Tools through which the main session asks the human directly (a question card in the
+# app). The question is a main -> human message and the tool result is the human's answer.
+ASK_TOOLS = {"AskUserQuestion"}
+
+
 def human_inputs(main_records: list[dict]) -> list[Message]:
+    """Messages typed by the human, plus questions asked through a question card and
+    the answers given there (both count as human interventions)."""
     msgs = []
     last_reply_ts = ""
+    asks: dict[str, str] = {}  # tool_use id -> question text
     for rec in main_records:
+        content = (rec.get("message") or {}).get("content")
         if rec.get("type") == "assistant" and not rec.get("isSidechain"):
             last_reply_ts = rec.get("timestamp", last_reply_ts)
+            for block in content if isinstance(content, list) else []:
+                if block.get("type") == "tool_use" and block.get("name") in ASK_TOOLS:
+                    question = json.dumps(block.get("input", {}), ensure_ascii=False)
+                    asks[block["id"]] = question
+                    msgs.append(
+                        Message(
+                            sender="main",
+                            receiver="human",
+                            type="Q-ASK",
+                            timestamp=rec.get("timestamp", ""),
+                            text=question,
+                        )
+                    )
             continue
         if rec.get("type") != "user" or rec.get("isSidechain") or rec.get("isMeta"):
             continue
-        content = (rec.get("message") or {}).get("content")
         if is_tool_result(content):
+            for block in content:
+                if block.get("type") == "tool_result" and block.get("tool_use_id") in asks:
+                    answer = block.get("content")
+                    answer = answer if isinstance(answer, str) else text_of(answer)
+                    msgs.append(
+                        Message(
+                            sender="human",
+                            receiver="main",
+                            type="H-ANSWER",
+                            timestamp=rec.get("timestamp", ""),
+                            wait_s=seconds_between(last_reply_ts, rec.get("timestamp", ""))
+                            if last_reply_ts
+                            else None,
+                            text=answer.strip(),
+                        )
+                    )
             continue
         text = text_of(content).strip()
         if not text or "<task-notification>" in text or text.startswith("<local-command"):
