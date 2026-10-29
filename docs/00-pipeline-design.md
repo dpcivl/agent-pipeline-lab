@@ -11,6 +11,7 @@
 - v1.5 (2026-10-29): 모델 배정 확정. 사람 개입 vs 자율 비교 실험 설계 추가 (5절)
 - v1.6 (2026-10-29): 연구 계획서(01-research-plan.md)와 연구 일지 폴더를 레포 구조에 반영
 - v1.7 (2026-10-29): 에이전트 간 소통 분석 축 추가 (6절). L2 지시 프롬프트는 자유, L3 보고는 형식 고정으로 확정. 메시지 단위 수집 구조로 변경
+- v1.8 (2026-10-29): 레포 구조 확정 (7절). 계약 부분(진입점, 설정, 테스트 픽스처)만 고정하고 나머지는 메인이 결정. 에이전트별 쓰기 영역, 실행 worktree에서 연구 문서 제외
 
 ---
 
@@ -63,7 +64,7 @@
 ```
 0. 프로젝트 세팅 (최초 1회) ─ uv, git, .claude/agents 7종, hooks, 수집 스크립트, CLAUDE.md
 1. 기능 설계서 (사람)            → docs/features/F{n}.md  (요구사항 + 수용 기준)
-2. 구현 계획 + 인터페이스 스켈레톤 (메인) → docs/plans/F{n}-plan.md + src/tests 스텁
+2. 구현 계획 + 인터페이스 스켈레톤 (메인) → docs/plans/F{n}-plan.md + src/tests 스텁 (7.2절 고정 계약 안에서 자유 영역 구조 결정)
 3. 계획 검토·승인 (사람)                          ◆ 사람 게이트 1
 4. [병렬] implementer (S1, src/)  ∥  test-writer (S2, tests/)
 5. 테스트 루프                                              ◆ green 게이트
@@ -240,6 +241,7 @@ Fable 5.1은 쓰지 않습니다. Opus 5.5 대비 단가가 2.5배이고, 이 �
 | 같은 설정 | 모델 배정, 에이전트 정의, CLAUDE.md, 루프 한도를 모든 실행에서 동일하게 유지. 실행 시작 시 이 파일들의 해시를 기록 |
 | 반복 실행 | LLM 결과는 매번 다르므로 **모드별·기능별 2회**. 기능 3 × 모드 2 × 2회 = **총 12회** |
 | 실행 순서 | 자율 모드를 먼저 돌리고 결과를 열어보지 않음. 먼저 보면 개입 모드에서 사람의 판단이 달라지기 때문 |
+| 연구 문서 격리 | 실행 worktree는 sparse-checkout으로 연구 문서와 다음 기능 설계서를 제외 (7.4절) |
 | 평가 테스트 격리 | 레포 밖에 보관. 실행 후 트랜스크립트에서 평가 폴더 경로 접근 흔적을 검색해, 접근한 실행은 무효 처리 |
 
 ### 5.3 결과물 품질 지표
@@ -249,6 +251,7 @@ Fable 5.1은 쓰지 않습니다. Opus 5.5 대비 단가가 2.5배이고, 이 �
    - 설계서의 수용 기준을 모두 포함하고, 보안 함정 케이스를 넣습니다. 예: `javascript:` URL, 예약어 별칭, API 키 없는 삭제, 만료 링크 접근.
    - 초안은 파이프라인 밖의 별도 Claude 세션이 만들고 **사람이 검토**합니다.
    - 실행 결과 worktree에 평가 테스트를 복사해 돌리는 스크립트로 채점합니다.
+   - 평가 테스트는 `create_app`과 `Settings`만 import하고 HTTP 요청으로만 검증합니다 (7.2절). 내부 구조가 달라도 똑같이 채점됩니다.
 2. **정적 지표:** ruff 린트 오류 수, 커버리지(%), radon 복잡도, bandit 보안 경고 수.
 3. **블라인드 비교 평가:** 어느 모드 결과인지 가리고(A/B 무작위 표기) 두 코드를 나란히 평가합니다. 평가자는 파이프라인에서 쓰지 않는 **Fable 5.1**입니다. 같은 모델이 자기 결과를 높게 보는 편향을 줄이기 위해서입니다. 루브릭: 정확성, 설계서 충실도, 코드 품질, 보안, 테스트 품질 (각 1~5점).
 4. **과정 지표:** 테스트 루프·리뷰 루프 횟수, 미해결 finding 수, 실패 종료 여부, 완료까지 걸린 시간.
@@ -358,44 +361,93 @@ L2는 **LLM이 LLM에게 쓰는 글**이라 가장 중요한 분석 대상입니
 
 ---
 
-## 7. 레포 구조 (세팅 단계에서 생성)
+## 7. 레포 구조 (확정 2026-10-29)
+
+원칙: **계약 역할을 하는 부분만 고정하고, 나머지는 메인 세션이 기능별 계획에서 결정합니다.**
+
+- 고정하는 이유: 숨긴 평가 테스트를 모든 실행 결과에 똑같이 돌리고, 두 모드의 결과를 비교하고, 에이전트별 쓰기 영역을 제한하기 위해서입니다.
+- 나머지를 자유롭게 두는 이유: 메인 세션이 코드 구조를 어떻게 설계하는지도 관찰 데이터이기 때문입니다.
+
+표시: **[고정]** 세팅 단계에서 만들고 실험 중 계약을 바꾸지 않음 · **[자유]** 메인 세션과 에이전트가 결정 · **[연구]** 연구용, 실행 worktree에서는 제외
+
+### 7.1 전체 구조
 
 ```
 agent-pipeline-lab/
-├── CLAUDE.md                     # 짧게. 모든 서브에이전트에 주입됨
-├── pyproject.toml                # uv
-├── src/shortlink/                # S1 쓰기 영역
-├── tests/                        # S2 쓰기 영역
-├── docs/
-│   ├── 00-pipeline-design.md     # 이 문서
-│   ├── 01-research-plan.md       # 연구 계획서
-│   ├── features/F1.md …          # 사람이 쓰는 설계서
-│   ├── plans/F1-plan.md …        # 메인이 쓰는 계획 + 스켈레톤 목록
-│   ├── insights/                 # 프롬프트 패턴 카드, 좋은/나쁜 예시
-│   └── journal/                  # 연구 일지
+├── CLAUDE.md                        [고정] 모든 에이전트가 읽는 짧은 공통 규칙
+├── pyproject.toml, uv.lock          [고정] uv 프로젝트 설정 (의존성 추가는 허용)
+├── src/shortlink/
+│   ├── __init__.py                  [고정]
+│   ├── main.py                      [고정] create_app() — 앱 진입점
+│   ├── config.py                    [고정] Settings — 환경 변수 기반 설정
+│   └── (나머지)                      [자유] 예: api/, services/, db.py, schemas.py
+├── tests/
+│   ├── conftest.py                  [고정] 임시 DB와 테스트 클라이언트 픽스처
+│   └── test_*.py                    [자유] test-writer 작성
 ├── .claude/
-│   ├── agents/                   # implementer, test-writer, tester, reviewer, qa, security, doc-keeper
-│   └── settings.json             # hooks
+│   ├── agents/                      [고정] 에이전트 정의 7종
+│   ├── skills/run-feature/          [고정] 오케스트레이션 지침, 자율/개입 모드 규칙
+│   └── settings.json                [고정] hook, 권한 설정
+├── docs/
+│   ├── features/F1.md …             [고정] 사람이 쓰는 설계서
+│   ├── plans/F1-plan.md …           [자유] 메인이 쓰는 계획과 결정 기록
+│   ├── 00-pipeline-design.md        [연구] 이 문서
+│   ├── 01-research-plan.md          [연구] 연구 계획서
+│   ├── insights/                    [연구] 프롬프트 패턴 카드, 좋은/나쁜 예시
+│   └── journal/                     [연구] 연구 일지
 └── research/
-    ├── hooks/log_agent_event.py
-    ├── tools/collect.py
-    ├── config/pricing.json
-    ├── config/message-codebook.md  # 메시지 종류·구성 요소 코딩 기준
-    ├── logs/                     # hooks 실시간 로그
-    ├── tools/score.py            # 평가 테스트 실행·채점
-    ├── runs/F1/auto/r1/ …        # 실행별 수집 결과 (기능/모드/반복)
-    │        ├── messages/        # 에이전트 간 메시지 원문 (비식별화)
-    │        ├── flow.md          # 메시지 흐름 다이어그램
-    │        ├── annotations.csv  # 메시지 코딩 결과
-    │        └── human-log.md     # 개입 모드에서 사람 개입 기록
-    └── REPORT.md                 # 최종 비교
+    ├── hooks/                       [고정] 에이전트 호출 실시간 기록 (실행 worktree에도 포함)
+    ├── tools/                       [연구] collect.py, score.py, 비식별화, 흐름도 생성
+    ├── config/                      [연구] pricing.json, message-codebook.md
+    ├── logs/                        [연구] hook 실시간 로그 (비공개)
+    ├── runs/F1/auto/r1/ …           [연구] 실행별 결과
+    │        ├── messages/           에이전트 간 메시지 원문 (비식별화)
+    │        ├── flow.md             메시지 흐름 다이어그램
+    │        ├── annotations.csv     메시지 코딩 결과
+    │        └── human-log.md        개입 모드에서 사람 개입 기록
+    └── REPORT.md                    [연구] 최종 보고서
 ```
 
 레포 밖 (에이전트 작업 범위 밖):
 ```
-../agent-pipeline-lab-eval/      # 숨긴 평가 테스트 (F1~F3)
-../agent-pipeline-lab-runs/      # 실행별 worktree (F1-auto-r1, F1-human-r1 …)
+../agent-pipeline-lab-eval/          숨긴 평가 테스트 (F1~F3)
+../agent-pipeline-lab-runs/          실행별 worktree (F1-auto-r1, F1-human-r1 …)
 ```
+
+### 7.2 서비스 코드 계약
+
+고정하는 것은 **파일 위치, 이름, 시그니처, 환경 변수 이름**입니다. 함수 본문은 에이전트가 구현합니다.
+
+| 파일 | 계약 |
+|---|---|
+| `src/shortlink/main.py` | `create_app(settings: Settings \| None = None) -> FastAPI`. 모듈 수준 `app = create_app()` (uvicorn 실행용). 앱 생성 시 DB 스키마를 준비함 |
+| `src/shortlink/config.py` | `Settings`: `db_path`(환경 변수 `SHORTLINK_DB_PATH`), `base_url`(`SHORTLINK_BASE_URL`). F3에서 API 키 항목 추가 예정 |
+| `tests/conftest.py` | `client` 픽스처: 임시 DB 경로로 `create_app(Settings(...))`을 만들어 `TestClient` 제공 |
+
+- 고정 파일은 **확장만 허용**합니다. 항목 추가는 되지만 기존 이름의 변경과 삭제는 안 됩니다.
+- 숨긴 평가 테스트는 `create_app`과 `Settings`만 import하고 **HTTP 요청으로만** 검증합니다. 그래서 자유 영역의 내부 구조와 상관없이 모든 실행 결과를 똑같이 채점할 수 있습니다.
+
+### 7.3 쓰기 영역
+
+| 주체 | 쓸 수 있는 곳 | 비고 |
+|---|---|---|
+| 메인 세션 | `docs/plans/`, 2단계의 스켈레톤 스텁(`src/`, `tests/`) | 고정 계약을 지키며 자유 영역 구조를 결정 |
+| implementer | `src/shortlink/**`, `pyproject.toml`·`uv.lock`(의존성 추가) | 고정 파일은 확장만 |
+| test-writer | `tests/**` | `conftest.py`는 확장만 |
+| tester, reviewer, qa, security | 없음 (읽기 전용) | 실행 후 `git status`로 확인 |
+| doc-keeper | `README.md`, `CHANGELOG.md`, git commit | |
+
+### 7.4 실행 worktree 구성
+
+비교 실험의 각 실행은 별도 worktree에서 돌립니다. 에이전트가 연구 문서를 읽으면 행동이 달라질 수 있으므로, **sparse-checkout으로 연구용 파일을 빼고** 만듭니다. sparse-checkout으로 빠진 파일은 커밋 시 삭제로 잡히지 않습니다.
+
+| 포함 | 제외 |
+|---|---|
+| `src/`, `tests/`, `.claude/`, `CLAUDE.md`, `pyproject.toml`, `uv.lock`, `research/hooks/` | `docs/00-*`, `docs/01-*`, `docs/insights/`, `docs/journal/` |
+| `docs/features/`의 **현재 기능 설계서만**, `docs/plans/` | `research/tools/`, `research/config/`, `research/runs/`, `research/REPORT.md` |
+
+- 다음 기능의 설계서를 미리 보면 구현이 달라질 수 있으므로 현재 기능 설계서만 넣습니다.
+- hook 로그는 worktree 안의 `research/logs/`(비공개)에 쌓이고, 실행이 끝나면 `collect.py`가 레포의 `research/runs/`로 모읍니다.
 
 ---
 
@@ -408,5 +460,6 @@ agent-pipeline-lab/
 5. **비교 실험** (5절): 자율 vs 개입 2개 모드, 기능별 2회 반복, 총 12회 실행으로 진행해도 되는지. 평가 테스트 검토는 사람이 맡음
 6. ~~지시 프롬프트 자유도~~ → **확정** (2026-10-29): L2 지시는 자유, L3 보고는 형식 고정 (6.2절)
 7. 소통 프로토콜 비교 실험(6.6절)은 본 실험 결과를 본 뒤 실행 여부 결정
+8. ~~레포 구조~~ → **확정** (2026-10-29): 계약 부분만 고정, 나머지는 메인이 결정 (7절)
 
 승인되면 세팅 단계로 넘어갑니다: uv/git 초기화 → 에이전트 정의 7종 → hooks + collect.py + score.py → `/run-feature` 명령(모드 전환) → 고정 오버헤드 베이스라인 측정 → F1 설계서 템플릿 제공 → 평가 테스트 초안 작성.
