@@ -55,6 +55,15 @@
             "command": "python \"$CLAUDE_PROJECT_DIR/research/hooks/guard_bash.py\""
           }
         ]
+      },
+      {
+        "matcher": "Read|Glob|Grep",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"$CLAUDE_PROJECT_DIR/research/hooks/guard_read.py\""
+          }
+        ]
       }
     ],
     "PostToolUse": [

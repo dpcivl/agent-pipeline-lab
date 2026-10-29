@@ -1,3 +1,4 @@
+# EVAL-CANARY-F1-f9f5210e4f17e5fd
 """Fixtures for the hidden F1 acceptance suite.
 
 The suite talks to the app only through the fixed contract

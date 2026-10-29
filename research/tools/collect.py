@@ -439,7 +439,9 @@ def main() -> int:
     )
     run_json = out / "run.json"
     if args.worktree and run_json.exists():
-        base = json.loads(run_json.read_text(encoding="utf-8"))["base_commit"]
+        record = json.loads(run_json.read_text(encoding="utf-8"))
+        # Newer runs start from a parentless snapshot; older ones branched from main.
+        base = record.get("snapshot_commit") or record["base_commit"]
         rows = checkpoints(Path(args.worktree), base)
         write_checkpoints(out / "checkpoints.csv", rows)
         outside = sorted({f for r in rows for f in r["outside_files"].split(";") if f})
@@ -471,23 +473,47 @@ EVAL_PATH_MARKERS = (
 )
 
 
+# Every hidden evaluation file carries a canary line, and every hidden test function name
+# starts with test_hidden_. If either shows up in what an agent received from a tool, the
+# agent saw the hidden tests, however it got there.
+EVAL_CONTENT_RE = re.compile(r"EVAL-CANARY-[A-Za-z0-9-]+|\btest_hidden_\w+")
+
+
 def eval_access(main_path: Path, agent_files: list[Path]) -> list[dict]:
-    """Tool calls in the main or subagent transcripts whose input mentions the eval folder."""
+    """Tool calls that mention the eval folder, and tool results that contain eval content."""
     hits = []
     for path in [main_path, *agent_files]:
         who = "main" if path == main_path else path.stem
         for rec in read_jsonl(path):
             content = (rec.get("message") or {}).get("content")
-            if rec.get("type") != "assistant" or not isinstance(content, list):
+            if not isinstance(content, list):
                 continue
             for block in content:
-                if not (isinstance(block, dict) and block.get("type") == "tool_use"):
+                if not isinstance(block, dict):
                     continue
-                text = json.dumps(block.get("input", {}), ensure_ascii=False)
-                if any(marker in text for marker in EVAL_PATH_MARKERS):
-                    hits.append(
-                        {"who": who, "tool": block.get("name"), "timestamp": rec.get("timestamp")}
-                    )
+                if rec.get("type") == "assistant" and block.get("type") == "tool_use":
+                    text = json.dumps(block.get("input", {}), ensure_ascii=False)
+                    if any(marker in text for marker in EVAL_PATH_MARKERS):
+                        hits.append(
+                            {
+                                "who": who,
+                                "kind": "tool input mentions eval folder",
+                                "tool": block.get("name"),
+                                "timestamp": rec.get("timestamp"),
+                            }
+                        )
+                elif rec.get("type") == "user" and block.get("type") == "tool_result":
+                    text = json.dumps(block.get("content", ""), ensure_ascii=False)
+                    match = EVAL_CONTENT_RE.search(text)
+                    if match:
+                        hits.append(
+                            {
+                                "who": who,
+                                "kind": "tool result contains eval content",
+                                "marker": match.group(0),
+                                "timestamp": rec.get("timestamp"),
+                            }
+                        )
     return hits
 
 

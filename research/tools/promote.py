@@ -1,7 +1,9 @@
 """Promote one run's result to main as a single feature commit.
 
-Squash-merges the run branch (run/<feature>-<mode>-r<rep>) into main, so main gets
-exactly one commit per feature while the run branch keeps every checkpoint commit.
+Applies the run branch's changes (snapshot..run/<feature>-<mode>-r<rep>) to main as one
+commit, so main gets exactly one commit per feature while the run branch keeps every
+checkpoint commit. Run branches start from a parentless snapshot (new_run.py), so the
+changes go in as a 3-way patch rather than a merge.
 Then tags the new commit baseline-F<n+1>, the common starting point for the next
 feature's runs. Run this in the research repository on a clean main branch.
 
@@ -71,7 +73,9 @@ def main() -> int:
     if not args.no_tag and git("tag", "--list", next_tag):
         sys.exit(f"tag {next_tag} already exists")
 
-    base = git("merge-base", "main", branch)
+    # Run branches start from a parentless snapshot commit (new_run.py), so they share no
+    # history with main. The run's own changes are snapshot..branch.
+    base = git("rev-list", "--max-parents=0", branch).splitlines()[0]
     subjects = git("log", "--format=%s", f"{base}..{branch}").splitlines()
     if not subjects:
         sys.exit(f"{branch} has no commits after {base[:8]}")
@@ -93,17 +97,23 @@ def main() -> int:
             + "\nReview them; rerun with --allow-outside to promote anyway."
         )
 
-    merge = subprocess.run(
-        ["git", "merge", "--squash", branch],
+    patch = subprocess.run(
+        ["git", "diff", "--binary", f"{base}..{branch}"],
         cwd=REPO,
         capture_output=True,
-        text=True,
-        encoding="utf-8",
+        check=True,
+    ).stdout
+    applied = subprocess.run(
+        ["git", "apply", "--index", "--3way", "-"],
+        cwd=REPO,
+        input=patch,
+        capture_output=True,
         check=False,
     )
-    if merge.returncode != 0:
-        subprocess.run(["git", "reset", "--merge"], cwd=REPO, check=False)
-        sys.exit(f"squash merge failed, main restored:\n{merge.stdout}{merge.stderr}")
+    if applied.returncode != 0:
+        subprocess.run(["git", "reset", "--hard", "-q", "HEAD"], cwd=REPO, check=False)
+        err = applied.stderr.decode("utf-8", errors="replace")
+        sys.exit(f"applying {branch} onto main failed, main restored:\n{err}")
 
     run_rel = f"research/runs/{args.feature}/{args.mode}/r{args.rep}"
     message = (
@@ -111,7 +121,7 @@ def main() -> int:
             [
                 final_subject,
                 "",
-                f"Squash of {branch}: {len(subjects)} commits ({checkpoints} checkpoints).",
+                f"Applied from {branch}: {len(subjects)} commits ({checkpoints} checkpoints).",
                 f"Run record: {run_rel}/",
                 "",
                 final_body.strip(),

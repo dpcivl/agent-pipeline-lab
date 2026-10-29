@@ -1,3 +1,4 @@
+# EVAL-CANARY-F1-f9f5210e4f17e5fd
 """Hidden acceptance tests for F1 web pages (AC-16 to AC-23)."""
 
 from __future__ import annotations
@@ -110,26 +111,26 @@ INVALID_FORM_URLS = [
 # ---------------------------------------------------------------- AC-16
 
 
-def test_ac16_home_returns_html(client):
+def test_hidden_ac16_home_returns_html(client):
     response = client.get("/")
     assert response.status_code == 200
     assert is_html(response)
 
 
-def test_ac16_home_has_post_form_to_root(client, parse_html):
+def test_hidden_ac16_home_has_post_form_to_root(client, parse_html):
     doc = parse_html(client.get("/").text)
     forms = [f for f in post_forms_to_root(doc) if url_field(f) is not None]
     assert forms, "no <form method=post action=/> containing name=url field"
 
 
-def test_ac16_url_field_has_label(client, parse_html):
+def test_hidden_ac16_url_field_has_label(client, parse_html):
     doc = parse_html(client.get("/").text)
     forms = [f for f in post_forms_to_root(doc) if url_field(f) is not None]
     assert forms
     assert is_labeled(doc, url_field(forms[0]))
 
 
-def test_ac16_submit_button_says_shorten(client, parse_html):
+def test_hidden_ac16_submit_button_says_shorten(client, parse_html):
     doc = parse_html(client.get("/").text)
     forms = [f for f in post_forms_to_root(doc) if url_field(f) is not None]
     assert forms
@@ -139,7 +140,7 @@ def test_ac16_submit_button_says_shorten(client, parse_html):
 # ---------------------------------------------------------------- AC-17
 
 
-def test_ac17_result_page_shows_short_link_and_original(client, parse_html):
+def test_hidden_ac17_result_page_shows_short_link_and_original(client, parse_html):
     url = "https://example.com/web?q=1"
     response = submit(client, url)
     assert response.status_code == 200
@@ -149,7 +150,7 @@ def test_ac17_result_page_shows_short_link_and_original(client, parse_html):
     assert url in doc.text()
 
 
-def test_ac17_short_link_uses_configured_base_url(make_client, parse_html):
+def test_hidden_ac17_short_link_uses_configured_base_url(make_client, parse_html):
     other = make_client(base_url="https://sho.rt/")
     response = submit(other, "https://example.com/base")
     assert response.status_code == 200
@@ -157,7 +158,7 @@ def test_ac17_short_link_uses_configured_base_url(make_client, parse_html):
     assert short_links(doc, re.compile(r"^https://sho\.rt/[A-Za-z0-9]{7}$"))
 
 
-def test_ac17_accepts_http_url(client, parse_html):
+def test_hidden_ac17_accepts_http_url(client, parse_html):
     url = "http://example.com/plain"
     response = submit(client, url)
     assert response.status_code == 200
@@ -169,14 +170,14 @@ def test_ac17_accepts_http_url(client, parse_html):
 # ---------------------------------------------------------------- AC-18
 
 
-def test_ac18_result_page_has_copy_button(client, parse_html):
+def test_hidden_ac18_result_page_has_copy_button(client, parse_html):
     response = submit(client, "https://example.com/copy")
     assert response.status_code == 200
     doc = parse_html(response.text)
     assert any("복사" in label for label in button_labels(doc))
 
 
-def test_ac18_result_page_links_home_to_shorten_another(client, parse_html):
+def test_hidden_ac18_result_page_links_home_to_shorten_another(client, parse_html):
     response = submit(client, "https://example.com/again")
     assert response.status_code == 200
     doc = parse_html(response.text)
@@ -187,14 +188,14 @@ def test_ac18_result_page_links_home_to_shorten_another(client, parse_html):
 
 
 @pytest.mark.parametrize("bad_url", INVALID_FORM_URLS)
-def test_ac19_invalid_url_shows_422_error_page(client, parse_html, bad_url):
+def test_hidden_ac19_invalid_url_shows_422_error_page(client, parse_html, bad_url):
     response = submit(client, bad_url)
     assert response.status_code == 422
     assert is_html(response)
 
 
 @pytest.mark.parametrize("bad_url", INVALID_FORM_URLS)
-def test_ac19_invalid_url_keeps_submitted_value(client, parse_html, bad_url):
+def test_hidden_ac19_invalid_url_keeps_submitted_value(client, parse_html, bad_url):
     doc = parse_html(submit(client, bad_url).text)
     field = url_field(doc)
     assert field is not None, "error page has no name=url field"
@@ -202,7 +203,7 @@ def test_ac19_invalid_url_keeps_submitted_value(client, parse_html, bad_url):
 
 
 @pytest.mark.parametrize("bad_url", INVALID_FORM_URLS)
-def test_ac19_invalid_url_shows_error_message(client, parse_html, bad_url):
+def test_hidden_ac19_invalid_url_shows_error_message(client, parse_html, bad_url):
     home_chunks = set(parse_html(client.get("/").text).chunks())
     doc = parse_html(submit(client, bad_url).text)
     extra = [c for c in doc.chunks() if c not in home_chunks and c != bad_url]
@@ -210,13 +211,13 @@ def test_ac19_invalid_url_shows_error_message(client, parse_html, bad_url):
 
 
 @pytest.mark.parametrize("bad_url", INVALID_FORM_URLS)
-def test_ac19_invalid_url_stores_nothing(client, table_counts, bad_url):
+def test_hidden_ac19_invalid_url_stores_nothing(client, table_counts, bad_url):
     before = table_counts()
     assert submit(client, bad_url).status_code == 422
     assert table_counts() == before
 
 
-def test_ac19_missing_url_field_rejected_and_not_stored(client, table_counts):
+def test_hidden_ac19_missing_url_field_rejected_and_not_stored(client, table_counts):
     before = table_counts()
     assert client.post("/", data={}).status_code == 422
     assert table_counts() == before
@@ -238,7 +239,7 @@ INVALID_SPECIAL_URLS = [
 
 
 @pytest.mark.parametrize("url", VALID_SPECIAL_URLS)
-def test_ac20_result_page_escapes_special_characters(client, parse_html, url):
+def test_hidden_ac20_result_page_escapes_special_characters(client, parse_html, url):
     response = submit(client, url)
     assert response.status_code == 200
     doc = parse_html(response.text)
@@ -247,7 +248,7 @@ def test_ac20_result_page_escapes_special_characters(client, parse_html, url):
 
 
 @pytest.mark.parametrize("url", INVALID_SPECIAL_URLS)
-def test_ac20_error_page_escapes_special_characters(client, parse_html, url):
+def test_hidden_ac20_error_page_escapes_special_characters(client, parse_html, url):
     response = submit(client, url)
     assert response.status_code == 422
     doc = parse_html(response.text)
@@ -261,7 +262,7 @@ def test_ac20_error_page_escapes_special_characters(client, parse_html, url):
 
 
 @pytest.mark.parametrize("code", ["Zz9Zz9Z", "nope"])
-def test_ac21_not_found_page(client, parse_html, code):
+def test_hidden_ac21_not_found_page(client, parse_html, code):
     response = client.get(f"/{code}")
     assert response.status_code == 404
     assert is_html(response)
@@ -290,7 +291,7 @@ def _page(client, kind):
 
 
 @pytest.mark.parametrize("kind", ["home", "result", "input_error", "not_found"])
-def test_ac22_page_has_lang_ko(client, parse_html, kind):
+def test_hidden_ac22_page_has_lang_ko(client, parse_html, kind):
     doc = parse_html(_page(client, kind).text)
     html_elements = list(doc.iter("html"))
     assert html_elements, "no <html> element"
@@ -298,7 +299,7 @@ def test_ac22_page_has_lang_ko(client, parse_html, kind):
 
 
 @pytest.mark.parametrize("kind", ["home", "result", "input_error", "not_found"])
-def test_ac22_page_has_viewport_meta(client, parse_html, kind):
+def test_hidden_ac22_page_has_viewport_meta(client, parse_html, kind):
     doc = parse_html(_page(client, kind).text)
     assert any(
         (meta.get("name") or "").lower() == "viewport" and (meta.get("content") or "")
@@ -309,7 +310,7 @@ def test_ac22_page_has_viewport_meta(client, parse_html, kind):
 # ---------------------------------------------------------------- AC-23
 
 
-def test_ac23_form_created_code_redirects(client, parse_html):
+def test_hidden_ac23_form_created_code_redirects(client, parse_html):
     url = "https://example.com/from-form?x=1"
     response = submit(client, url)
     assert response.status_code == 200

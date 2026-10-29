@@ -1,15 +1,19 @@
 """Create an isolated worktree for one pipeline run.
 
-The worktree contains only what the agents need (sparse checkout): the service code,
-tests, agent definitions, hooks, plans, and the spec of the current feature. Research
-documents and other features' specs are left out so they cannot influence the agents.
+The run branch starts from a **parentless snapshot commit** that holds only what the
+agents need: service code, tests, agent definitions, hooks, plans, and the specs of the
+current and earlier features. Because the snapshot has no parent, `git log` inside the
+run shows no research history (design docs, hidden evaluation tests, other runs).
+Access to other refs and to the research repository is blocked separately by
+research/hooks/guard_bash.py and guard_read.py.
 
 Usage:
   uv run python research/tools/new_run.py F1 auto 1 [--base <commit-or-tag>]
   uv run python research/tools/new_run.py P2 auto 1   (measurement stage, no feature spec)
 
 Modes: auto (no human), human (human at H1-H4), default (human approves the plan only).
-Writes research/runs/<feature>/<mode>/r<rep>/run.json with the base commit and config hashes.
+Writes research/runs/<feature>/<mode>/r<rep>/run.json with the base and snapshot commits
+and config hashes.
 """
 
 from __future__ import annotations
@@ -17,16 +21,35 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import re
 import shutil
 import subprocess
 import sys
+import tempfile
 from datetime import UTC, datetime
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
 DEFAULT_RUNS_ROOT = REPO.parent / f"{REPO.name}-runs"
 MODES = ("auto", "human", "default")
+# Everything the agents may see. Research documents, tools, runs and hidden evaluation
+# tests are deliberately absent.
+AGENT_PATHS = (
+    "CLAUDE.md",
+    "pyproject.toml",
+    "uv.lock",
+    ".python-version",
+    ".gitignore",
+    "CHANGELOG.md",
+    "src",
+    "tests",
+    ".claude",
+    "research/hooks",
+    "docs/plans",
+    "docs/service.md",
+    "docs/features/README.md",
+)
 # Files whose content must be identical across runs being compared.
 CONFIG_PATHS = (
     "CLAUDE.md",
@@ -40,41 +63,48 @@ CONFIG_PATHS = (
 )
 
 
-def git(*args: str, cwd: Path = REPO) -> str:
+def git(*args: str, cwd: Path = REPO, env: dict | None = None, stdin: str | None = None) -> str:
     result = subprocess.run(
-        ["git", *args], check=False, cwd=cwd, capture_output=True, text=True, encoding="utf-8"
+        ["git", *args],
+        check=False,
+        cwd=cwd,
+        env=env,
+        input=stdin,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
     )
     if result.returncode != 0:
         sys.exit(f"git {' '.join(args)} failed:\n{result.stderr.strip()}")
     return result.stdout.strip()
 
 
-def sparse_patterns(feature: str) -> list[str]:
-    return [
-        "/CLAUDE.md",
-        "/pyproject.toml",
-        "/uv.lock",
-        "/.python-version",
-        "/.gitignore",
-        "/CHANGELOG.md",
-        "/src/",
-        "/tests/",
-        "/.claude/",
-        "/research/hooks/",
-        "/docs/plans/",
-        "/docs/service.md",
-        "/docs/features/README.md",
-        f"/docs/features/{feature}.md",
-    ]
+def spec_paths(feature: str) -> list[str]:
+    """Specs of this feature and all earlier ones (later features stay hidden)."""
+    if not feature.startswith("F"):
+        return []
+    n = int(feature[1:])
+    return [f"docs/features/F{k}.md" for k in range(1, n + 1)]
 
 
-def config_hashes(base: str) -> dict[str, str]:
-    """sha256 of each tracked config file at the base commit."""
-    listing = git("ls-tree", "-r", "--name-only", base, "--", *CONFIG_PATHS)
+def snapshot_commit(base: str, paths: list[str], message: str) -> str:
+    """A parentless commit whose tree holds only `paths` as they are at `base`."""
+    entries = git("ls-tree", "-r", "--full-tree", base, "--", *paths)
+    with tempfile.TemporaryDirectory() as tmp:
+        env = {**os.environ, "GIT_INDEX_FILE": str(Path(tmp) / "index")}
+        git("read-tree", "--empty", env=env)
+        git("update-index", "--index-info", env=env, stdin=entries + "\n")
+        tree = git("write-tree", env=env)
+    return git("commit-tree", tree, "-m", message)
+
+
+def config_hashes(commit: str) -> dict[str, str]:
+    """sha256 of each tracked config file at the given commit."""
+    listing = git("ls-tree", "-r", "--name-only", commit, "--", *CONFIG_PATHS)
     hashes = {}
     for path in sorted(listing.splitlines()):
         blob = subprocess.run(
-            ["git", "show", f"{base}:{path}"], check=False, cwd=REPO, capture_output=True
+            ["git", "show", f"{commit}:{path}"], check=False, cwd=REPO, capture_output=True
         )
         hashes[path] = hashlib.sha256(blob.stdout).hexdigest()
     return hashes
@@ -102,7 +132,7 @@ def main() -> int:
     ap.add_argument("feature", help="feature id (F1, F2, ...) or measurement stage (P2)")
     ap.add_argument("mode", choices=MODES)
     ap.add_argument("rep", type=int, help="repetition number, e.g. 1")
-    ap.add_argument("--base", default="HEAD", help="commit or tag to start from")
+    ap.add_argument("--base", default="HEAD", help="commit or tag to take the files from")
     ap.add_argument("--runs-root", default=str(DEFAULT_RUNS_ROOT))
     ap.add_argument("--allow-missing-spec", action="store_true", help="for tooling tests only")
     ap.add_argument("--no-sync", action="store_true", help="skip uv sync in the worktree")
@@ -110,7 +140,7 @@ def main() -> int:
 
     if not re.fullmatch(r"[FP]\d+", args.feature):
         sys.exit("feature must look like F1 (feature) or P2 (measurement stage)")
-    measurement = args.feature.startswith("P")  # no feature spec needed
+    measurement = args.feature.startswith("P")
     name = f"{args.feature}-{args.mode}-r{args.rep}"
     branch = f"run/{name}"
     worktree = Path(args.runs_root) / name
@@ -119,20 +149,15 @@ def main() -> int:
         sys.exit(f"run already exists: {worktree} or {run_dir / 'run.json'}")
 
     base = git("rev-parse", "--verify", f"{args.base}^{{commit}}")
-    spec = f"docs/features/{args.feature}.md"
-    has_spec = (
-        subprocess.run(
-            ["git", "cat-file", "-e", f"{base}:{spec}"], check=False, cwd=REPO, capture_output=True
-        ).returncode
-        == 0
-    )
-    if not has_spec and not (measurement or args.allow_missing_spec):
-        sys.exit(f"{spec} is not in the base commit {base[:8]}")
+    specs = spec_paths(args.feature)
+    present = set(git("ls-tree", "-r", "--name-only", base, "--", *specs).splitlines())
+    missing = [s for s in specs if s not in present]
+    if missing and not (measurement or args.allow_missing_spec):
+        sys.exit(f"missing in base commit {base[:8]}: {', '.join(missing)}")
 
+    snapshot = snapshot_commit(base, [*AGENT_PATHS, *specs], f"Base snapshot for {name}")
     worktree.parent.mkdir(parents=True, exist_ok=True)
-    git("worktree", "add", "--no-checkout", "-b", branch, str(worktree), base)
-    git("sparse-checkout", "set", "--no-cone", *sparse_patterns(args.feature), cwd=worktree)
-    git("checkout", branch, cwd=worktree)
+    git("worktree", "add", "-b", branch, str(worktree), snapshot)
     (worktree / "research" / "logs").mkdir(parents=True, exist_ok=True)
     if not args.no_sync:
         subprocess.run(["uv", "sync", "--frozen", "-q"], cwd=worktree, check=True)
@@ -144,16 +169,17 @@ def main() -> int:
         "mode": args.mode,
         "rep": args.rep,
         "base_commit": base,
+        "snapshot_commit": snapshot,
         "branch": branch,
         "worktree": worktree.name,
         "created_at": datetime.now(UTC).isoformat(timespec="seconds"),
         "claude_code_version": claude_version(),
-        "config_hashes": config_hashes(base),
+        "config_hashes": config_hashes(snapshot),
     }
     (run_dir / "run.json").write_text(json.dumps(record, indent=2) + "\n", encoding="utf-8")
 
     print(f"worktree: {worktree}")
-    print(f"branch:   {branch} (from {base[:8]})")
+    print(f"branch:   {branch} (snapshot {snapshot[:8]} of {base[:8]}, no research history)")
     print(f"record:   {run_dir / 'run.json'}")
     print("next:")
     command = "/measure-baseline" if measurement else f"/run-feature {args.feature} {args.mode}"

@@ -1,3 +1,4 @@
+<!-- EVAL-CANARY-F1-f9f5210e4f17e5fd -->
 # F1 숨은 수용 테스트
 
 F1 설계서(`docs/features/F1.md` v2)의 AC-1~AC-23을 공개 HTTP 인터페이스로만 검사하는 채점용 테스트입니다. 모든 파이프라인 결과물을 같은 기준으로 채점합니다. 앱은 고정 계약(`shortlink.main.create_app`, `shortlink.config.Settings`)으로만 만들고, 구현 내부(모듈, 테이블 이름, 코드 생성 방식)는 보지 않습니다.
@@ -16,29 +17,29 @@ uv run pytest research/eval/F1 -q
 
 ## AC별 테스트
 
-- AC-1: `test_ac01_create_returns_201_with_fields`
-- AC-2: `test_ac02_code_is_seven_alphanumerics`, `test_ac02_short_url_is_base_url_slash_code`, `test_ac02_short_url_follows_configured_base_url`
-- AC-3: `test_ac03_url_returned_verbatim` (6개 URL: 끝 슬래시 없음, 대소문자, `%2F`·`%20`, `..` 경로, 프래그먼트, 포트)
-- AC-4: `test_ac04_http_url_is_accepted`
-- AC-5: `test_ac05_rejects_non_http_scheme` (ftp, javascript, data, mailto, file, 스킴 없음), `test_ac05_rejects_javascript_scheme`
-- AC-6: `test_ac06_rejects_missing_url_field`, `test_ac06_rejects_non_string_url` (int, float, null, bool, list, object), `test_ac06_rejects_empty_string`
-- AC-7: `test_ac07_rejects_url_without_host` (`https://`, `http://`, `https:///path`)
-- AC-8: `test_ac08_accepts_2048_chars`(생성과 리다이렉트), `test_ac08_rejects_2049_chars`, `test_ac08_rejects_much_longer_url`
-- AC-9: `test_ac09_storage_is_observable_precondition`(정상 생성은 행이 늘어나는지 확인하는 전제), `test_ac09_rejected_request_stores_nothing`(거절 유형 7개), `test_ac09_rejected_requests_leave_db_unchanged_from_empty`. db_path의 모든 테이블 행 수를 테이블 이름 가정 없이 비교합니다.
-- AC-10: `test_ac10_redirects_with_302_to_original`(AC-3과 같은 URL 6개), `test_ac10_redirects_http_url`
-- AC-11: `test_ac11_unknown_code_returns_404`(7자, 짧은 코드, 긴 코드), `test_ac11_unknown_code_404_when_other_codes_exist`
-- AC-12: `test_ac12_same_url_twice_gives_different_codes`
-- AC-13: `test_ac13_hundred_codes_are_unique`
-- AC-14: `test_ac14_redirect_survives_new_app_on_same_db`, `test_ac14_new_app_still_returns_404_for_unknown`
-- AC-15: `test_ac15_created_at_is_utc_iso8601_and_recent`
-- AC-16: `test_ac16_home_returns_html`, `test_ac16_home_has_post_form_to_root`, `test_ac16_url_field_has_label`, `test_ac16_submit_button_says_shorten`
-- AC-17: `test_ac17_result_page_shows_short_link_and_original`, `test_ac17_short_link_uses_configured_base_url`, `test_ac17_accepts_http_url`
-- AC-18: `test_ac18_result_page_has_copy_button`, `test_ac18_result_page_links_home_to_shorten_another`
-- AC-19: `test_ac19_invalid_url_shows_422_error_page`, `test_ac19_invalid_url_keeps_submitted_value`, `test_ac19_invalid_url_shows_error_message`, `test_ac19_invalid_url_stores_nothing`(각각 ftp, javascript, mailto, 호스트 없음, 빈 문자열, 2,049자), `test_ac19_missing_url_field_rejected_and_not_stored`
-- AC-20: `test_ac20_result_page_escapes_special_characters`(유효 URL 3개), `test_ac20_error_page_escapes_special_characters`(무효 URL 2개)
-- AC-21: `test_ac21_not_found_page`
-- AC-22: `test_ac22_page_has_lang_ko`, `test_ac22_page_has_viewport_meta` (홈, 결과, 입력 오류, 찾을 수 없음 4개 화면)
-- AC-23: `test_ac23_form_created_code_redirects`
+- AC-1: `test_hidden_ac01_create_returns_201_with_fields`
+- AC-2: `test_hidden_ac02_code_is_seven_alphanumerics`, `test_hidden_ac02_short_url_is_base_url_slash_code`, `test_hidden_ac02_short_url_follows_configured_base_url`
+- AC-3: `test_hidden_ac03_url_returned_verbatim` (6개 URL: 끝 슬래시 없음, 대소문자, `%2F`·`%20`, `..` 경로, 프래그먼트, 포트)
+- AC-4: `test_hidden_ac04_http_url_is_accepted`
+- AC-5: `test_hidden_ac05_rejects_non_http_scheme` (ftp, javascript, data, mailto, file, 스킴 없음), `test_hidden_ac05_rejects_javascript_scheme`
+- AC-6: `test_hidden_ac06_rejects_missing_url_field`, `test_hidden_ac06_rejects_non_string_url` (int, float, null, bool, list, object), `test_hidden_ac06_rejects_empty_string`
+- AC-7: `test_hidden_ac07_rejects_url_without_host` (`https://`, `http://`, `https:///path`)
+- AC-8: `test_hidden_ac08_accepts_2048_chars`(생성과 리다이렉트), `test_hidden_ac08_rejects_2049_chars`, `test_hidden_ac08_rejects_much_longer_url`
+- AC-9: `test_hidden_ac09_storage_is_observable_precondition`(정상 생성은 행이 늘어나는지 확인하는 전제), `test_hidden_ac09_rejected_request_stores_nothing`(거절 유형 7개), `test_hidden_ac09_rejected_requests_leave_db_unchanged_from_empty`. db_path의 모든 테이블 행 수를 테이블 이름 가정 없이 비교합니다.
+- AC-10: `test_hidden_ac10_redirects_with_302_to_original`(AC-3과 같은 URL 6개), `test_hidden_ac10_redirects_http_url`
+- AC-11: `test_hidden_ac11_unknown_code_returns_404`(7자, 짧은 코드, 긴 코드), `test_hidden_ac11_unknown_code_404_when_other_codes_exist`
+- AC-12: `test_hidden_ac12_same_url_twice_gives_different_codes`
+- AC-13: `test_hidden_ac13_hundred_codes_are_unique`
+- AC-14: `test_hidden_ac14_redirect_survives_new_app_on_same_db`, `test_hidden_ac14_new_app_still_returns_404_for_unknown`
+- AC-15: `test_hidden_ac15_created_at_is_utc_iso8601_and_recent`
+- AC-16: `test_hidden_ac16_home_returns_html`, `test_hidden_ac16_home_has_post_form_to_root`, `test_hidden_ac16_url_field_has_label`, `test_hidden_ac16_submit_button_says_shorten`
+- AC-17: `test_hidden_ac17_result_page_shows_short_link_and_original`, `test_hidden_ac17_short_link_uses_configured_base_url`, `test_hidden_ac17_accepts_http_url`
+- AC-18: `test_hidden_ac18_result_page_has_copy_button`, `test_hidden_ac18_result_page_links_home_to_shorten_another`
+- AC-19: `test_hidden_ac19_invalid_url_shows_422_error_page`, `test_hidden_ac19_invalid_url_keeps_submitted_value`, `test_hidden_ac19_invalid_url_shows_error_message`, `test_hidden_ac19_invalid_url_stores_nothing`(각각 ftp, javascript, mailto, 호스트 없음, 빈 문자열, 2,049자), `test_hidden_ac19_missing_url_field_rejected_and_not_stored`
+- AC-20: `test_hidden_ac20_result_page_escapes_special_characters`(유효 URL 3개), `test_hidden_ac20_error_page_escapes_special_characters`(무효 URL 2개)
+- AC-21: `test_hidden_ac21_not_found_page`
+- AC-22: `test_hidden_ac22_page_has_lang_ko`, `test_hidden_ac22_page_has_viewport_meta` (홈, 결과, 입력 오류, 찾을 수 없음 4개 화면)
+- AC-23: `test_hidden_ac23_form_created_code_redirects`
 
 ## 판정 기준에서 일부러 정한 해석
 

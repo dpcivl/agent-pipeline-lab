@@ -17,6 +17,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from eventlog import read_payload, write_event
+from runscope import is_run_worktree
 
 WRITE_AREAS = {
     "implementer": ("src/shortlink/", "pyproject.toml", "uv.lock"),
@@ -46,9 +47,11 @@ def log_block(project: Path, payload: dict, reason: str) -> None:
 def main() -> int:
     payload = read_payload()
     agent_type = payload.get("agent_type")
-    if not agent_type:
-        return 0
     project = Path(os.environ.get("CLAUDE_PROJECT_DIR") or payload.get("cwd") or ".").resolve()
+    # The main session is free in the research repository, but in an experiment run
+    # it may not write outside the project either.
+    if not agent_type and not is_run_worktree(project):
+        return 0
     tool_input = payload.get("tool_input") or {}
     raw_path = tool_input.get("file_path") or tool_input.get("notebook_path")
     if not raw_path:
@@ -66,7 +69,7 @@ def main() -> int:
         print(reason, file=sys.stderr)
         return 2
 
-    if agent_type not in WRITE_AREAS:
+    if not agent_type or agent_type not in WRITE_AREAS:
         return 0
     allowed = WRITE_AREAS[agent_type]
     if any(rel == a or (a.endswith("/") and rel.startswith(a)) for a in allowed):
