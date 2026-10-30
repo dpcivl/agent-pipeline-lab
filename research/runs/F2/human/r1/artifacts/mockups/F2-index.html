@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>F2 화면 목업</title>
+<style>
+body { margin: 0; padding: 24px 16px; font-family: system-ui, "Malgun Gothic", sans-serif; background: #f3f4f6; color: #1f2937; line-height: 1.6; }
+main { max-width: 760px; margin: 0 auto; }
+h1 { font-size: 1.5rem; }
+table { width: 100%; border-collapse: collapse; background: #fff; }
+th, td { border: 1px solid #d1d5db; padding: 8px 10px; text-align: left; vertical-align: top; }
+th { background: #e5e7eb; }
+a { color: #2563eb; font-weight: 600; }
+ul { padding-left: 20px; }
+code { background: #e5e7eb; padding: 0 4px; border-radius: 4px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>F2 화면 목업 — 클릭 통계와 커스텀 별칭</h1>
+  <p>실제 구현이 따라야 할 문구, 배치, 색의 기준입니다. 각 파일은 인터넷 연결 없이 바로 열립니다. F1 화면 중 바뀌지 않는 것은 F1 목업을 그대로 따릅니다.</p>
+  <table>
+    <thead><tr><th>화면</th><th>경로</th><th>목업</th><th>수용 기준</th></tr></thead>
+    <tbody>
+      <tr><td>홈 (별칭 칸 추가)</td><td><code>GET /</code></td><td><a href="F2-home.html">F2-home.html</a></td><td>AC-10</td></tr>
+      <tr><td>결과 ("통계 보기" 추가)</td><td><code>POST /</code> 성공 (200)</td><td><a href="F2-result.html">F2-result.html</a></td><td>AC-10, AC-19</td></tr>
+      <tr><td>별칭 오류</td><td><code>POST /</code> 별칭 규칙 위반 (422)</td><td><a href="F2-alias-error.html">F2-alias-error.html</a></td><td>AC-11</td></tr>
+      <tr><td>별칭 중복</td><td><code>POST /</code> 이미 쓰는 별칭 (409)</td><td><a href="F2-alias-conflict.html">F2-alias-conflict.html</a></td><td>AC-11</td></tr>
+      <tr><td>통계 (접근 있음)</td><td><code>GET /stats/{code}</code> (200)</td><td><a href="F2-stats.html">F2-stats.html</a></td><td>AC-17, AC-21, AC-22</td></tr>
+      <tr><td>통계 (접근 없음)</td><td><code>GET /stats/{code}</code> (200)</td><td><a href="F2-stats-empty.html">F2-stats-empty.html</a></td><td>AC-17</td></tr>
+      <tr><td>URL 입력 오류 (F1)</td><td><code>POST /</code> URL 규칙 위반 (422)</td><td>문구는 <a href="F1-error.html">F1-error.html</a>, 배치는 F2 홈과 같음 (URL 칸에 <code>aria-invalid</code>)</td><td>F1 AC-19</td></tr>
+      <tr><td>찾을 수 없음 (F1, 변경 없음)</td><td>없는 코드로 <code>GET /{code}</code>, <code>GET /stats/{code}</code> (404)</td><td><a href="F1-not-found.html">F1-not-found.html</a></td><td>AC-18</td></tr>
+    </tbody>
+  </table>
+
+  <h2>공통 규칙</h2>
+  <ul>
+    <li>F1 공통 스타일은 그대로 두고, 목업의 "F2 추가 스타일" 블록을 <code>src/shortlink/static/style.css</code> 끝에 덧붙인다.</li>
+    <li>홈 폼은 URL 칸 → 별칭 칸(안내 문구 포함) → "줄이기" 버튼 순서로 세로로 쌓는다. 폭 375px에서는 버튼이 가로로 꽉 찬다.</li>
+    <li>입력칸에 <code>required</code>, <code>pattern</code>, <code>maxlength</code>를 쓰지 않는다. 검증은 서버가 한다.</li>
+    <li>오류 문구는 폼 맨 위 하나(<code>id="form-error"</code>)만 보이고, 문제가 된 칸에만 빨간 테두리(<code>aria-invalid="true"</code>)를 둔다. 입력했던 URL과 별칭은 둘 다 입력칸에 남는다.</li>
+    <li>통계 화면의 시각은 <code>2026-10-29 01:23:45 UTC</code>로 보이고 <code>&lt;time datetime="2026-10-29T01:23:45Z"&gt;</code>로 감싼다. 접근한 적이 없으면 회색 "아직 없음".</li>
+    <li>클릭 수는 천 단위 쉼표를 넣어 보인다 (예: 1,284회). 0이면 "0회".</li>
+    <li>원래 URL은 이스케이프해서 보이고 긴 URL은 줄바꿈된다.</li>
+  </ul>
+
+  <h2>별칭 오류 문구 (첫 번째로 걸린 규칙 하나만 표시, URL 오류가 있으면 URL 문구가 먼저)</h2>
+  <table>
+    <thead><tr><th>조건</th><th>상태</th><th>문구</th></tr></thead>
+    <tbody>
+      <tr><td>길이가 4자 미만 또는 30자 초과</td><td>422</td><td>별칭은 4자 이상 30자 이하여야 합니다.</td></tr>
+      <tr><td>영문, 숫자, 하이픈 밖의 문자 (공백, <code>_</code>, <code>/</code>, <code>.</code>, 한글 등)</td><td>422</td><td>별칭에는 영문, 숫자, 하이픈(-)만 쓸 수 있습니다.</td></tr>
+      <tr><td>하이픈으로 시작하거나 끝남</td><td>422</td><td>별칭은 하이픈(-)으로 시작하거나 끝날 수 없습니다.</td></tr>
+      <tr><td>예약어 (대소문자 무시): links, static, stats, docs, redoc, openapi.json, api, admin, manage</td><td>422</td><td>예약된 이름이라 별칭으로 쓸 수 없습니다.</td></tr>
+      <tr><td>이미 쓰이는 코드나 별칭</td><td>409</td><td>이미 사용 중인 별칭입니다. 다른 별칭을 입력해 주세요.</td></tr>
+      <tr><td>(API만) 문자열이 아님</td><td>422</td><td>alias는 문자열이어야 합니다. (FastAPI 기본 본문)</td></tr>
+    </tbody>
+  </table>
+</main>
+</body>
+</html>

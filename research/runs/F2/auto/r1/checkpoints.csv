@@ -1,0 +1,4 @@
+seq,commit,timestamp,kind,subject,files,insertions,deletions,outside_files
+1,a4d9c712cf,2026-10-29T16:11:42+09:00,checkpoint,"wip(F2): 1 계획, 스켈레톤, 목업",14,1382,12,
+2,34689f1614,2026-10-29T16:17:45+09:00,checkpoint,wip(F2): 2 구현과 테스트 작성,17,2543,37,
+3,49972ad991,2026-10-29T16:23:25+09:00,feature,F2: 클릭 통계와 커스텀 별칭 추가,3,304,30,
